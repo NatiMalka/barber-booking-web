@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -14,7 +14,8 @@ import {
   Alert,
   AlertTitle,
   Button,
-  CircularProgress
+  CircularProgress,
+  Fade
 } from '@mui/material';
 import { 
   CalendarMonth, 
@@ -35,6 +36,7 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import Link from 'next/link';
+import Lottie from 'lottie-react';
 import { createAppointment } from '@/firebase/services/appointmentService';
 
 // Define services map for display
@@ -77,6 +79,27 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAnimation, setShowAnimation] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [animationData, setAnimationData] = useState<any>(null);
+
+  // Load the animation data when component mounts
+  useEffect(() => {
+    fetch('/animations/animation.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Failed to load animation: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Animation loaded successfully');
+        setAnimationData(data);
+      })
+      .catch(error => {
+        console.error('Error loading animation:', error);
+      });
+  }, []);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -114,6 +137,12 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
       console.log('Appointment created successfully:', createdAppointment);
       
       setIsSubmitted(true);
+      setShowAnimation(true);
+      
+      // After animation plays for a bit, show the summary with fade-in effect
+      setTimeout(() => {
+        setShowSummary(true);
+      }, 2000);
     } catch (error) {
       console.error('Error submitting appointment:', error);
       setError('אירעה שגיאה בשמירת התור. אנא נסה שנית.');
@@ -132,286 +161,430 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
   if (isSubmitted) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <HourglassTop color="primary" sx={{ fontSize: 80, mb: 2 }} />
-        <Typography variant="h4" gutterBottom color="primary.main">
-          בקשת התור נשלחה!
-        </Typography>
-        
-        <Alert 
-          severity="info" 
-          icon={<Info fontSize="large" />}
-          sx={{ 
-            maxWidth: '500px', 
-            mx: 'auto', 
-            mb: 4, 
-            py: 2,
-            fontSize: '1.1rem',
-            '& .MuiAlert-message': { width: '100%' }
-          }}
-        >
-          <AlertTitle sx={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}>
-            חשוב לדעת
-          </AlertTitle>
-          <Box sx={{ textAlign: 'center', fontWeight: 'medium' }}>
-            <Typography variant="body1" paragraph component="div" sx={{ fontWeight: 'bold' }}>
-              בקשת התור נשלחה לאישור הספר
-            </Typography>
-            <Typography variant="body1" component="div">
-              לאחר אישור הבקשה, תקבל הודעת אישור ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}
-            </Typography>
-          </Box>
-        </Alert>
-        
-        <Box sx={{ maxWidth: '500px', mx: 'auto', mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
-          <Typography variant="h6" gutterBottom color="primary">
-            סיכום הבקשה
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary">
-                שירותים:
-              </Typography>
-              <List dense>
-                {bookingData.services.map((serviceId) => (
-                  <ListItem key={serviceId} sx={{ py: 0.5 }}>
-                    <ListItemIcon sx={{ minWidth: '30px' }}>
-                      <ContentCut fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
-                      secondary={`₪${servicesMap[serviceId]?.price || 0}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-              <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
-                סה"כ: ₪{calculateTotalPrice()}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                תאריך:
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : ''}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                שעה:
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {bookingData.time}
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">
-                שם:
-              </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {bookingData.name}
-              </Typography>
-            </Grid>
-            {bookingData.withChildren && (
-              <Grid item xs={12}>
-                <Typography variant="body2" color="text.secondary">
-                  ילדים:
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {bookingData.childrenCount} ילדים
-                </Typography>
-              </Grid>
+        {showAnimation && (
+          <Box sx={{ maxWidth: '250px', mx: 'auto', mb: 4 }}>
+            {animationData ? (
+              <Lottie 
+                animationData={animationData} 
+                loop={true}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : (
+              // Fallback animation if Lottie fails to load
+              <Box 
+                sx={{ 
+                  width: '200px', 
+                  height: '200px', 
+                  mx: 'auto',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                  bgcolor: '#f8f8f8'
+                }}
+              >
+                {/* Barber Pole Animation */}
+                <Box 
+                  sx={{
+                    width: '60px',
+                    height: '180px',
+                    position: 'absolute',
+                    top: '10px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    borderRadius: '10px',
+                    bgcolor: '#f0f0f0',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Red Stripe */}
+                  <Box 
+                    sx={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '40px',
+                      bgcolor: '#e74c3c',
+                      animation: 'moveStripe 2s linear infinite',
+                      '@keyframes moveStripe': {
+                        '0%': { top: '-40px' },
+                        '100%': { top: '180px' }
+                      }
+                    }}
+                  />
+                  
+                  {/* Blue Stripe */}
+                  <Box 
+                    sx={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '40px',
+                      bgcolor: '#3498db',
+                      animation: 'moveStripe 2s linear infinite',
+                      animationDelay: '0.66s',
+                      '@keyframes moveStripe': {
+                        '0%': { top: '-40px' },
+                        '100%': { top: '180px' }
+                      }
+                    }}
+                  />
+                  
+                  {/* White Stripe */}
+                  <Box 
+                    sx={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '40px',
+                      bgcolor: 'white',
+                      animation: 'moveStripe 2s linear infinite',
+                      animationDelay: '1.33s',
+                      '@keyframes moveStripe': {
+                        '0%': { top: '-40px' },
+                        '100%': { top: '180px' }
+                      }
+                    }}
+                  />
+                  
+                  {/* Pole Cap Top */}
+                  <Box 
+                    sx={{
+                      position: 'absolute',
+                      width: '70px',
+                      height: '15px',
+                      bgcolor: '#d0d0d0',
+                      borderRadius: '5px',
+                      top: '-5px',
+                      left: '-5px',
+                      zIndex: 2
+                    }}
+                  />
+                  
+                  {/* Pole Cap Bottom */}
+                  <Box 
+                    sx={{
+                      position: 'absolute',
+                      width: '70px',
+                      height: '15px',
+                      bgcolor: '#d0d0d0',
+                      borderRadius: '5px',
+                      bottom: '-5px',
+                      left: '-5px',
+                      zIndex: 2
+                    }}
+                  />
+                </Box>
+                
+                {/* Checkmark Icon */}
+                <CheckCircle 
+                  color="success" 
+                  sx={{ 
+                    position: 'absolute', 
+                    bottom: '10px', 
+                    right: '10px', 
+                    fontSize: 40,
+                    animation: 'pulse 2s infinite',
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(0.95)', opacity: 0.7 },
+                      '50%': { transform: 'scale(1.05)', opacity: 1 },
+                      '100%': { transform: 'scale(0.95)', opacity: 0.7 },
+                    }
+                  }} 
+                />
+              </Box>
             )}
-          </Grid>
-        </Box>
-        <Box sx={{ mt: 4 }}>
-          <Button 
-            component={Link} 
-            href="/" 
-            variant="contained" 
-            color="primary"
-            startIcon={<Home />}
-            sx={{ mx: 1 }}
-          >
-            חזרה לדף הבית
-          </Button>
-        </Box>
+          </Box>
+        )}
+        
+        <Fade in={showSummary} timeout={1000}>
+          <Box>
+            <Typography variant="h4" gutterBottom color="primary.main">
+              בקשת התור נשלחה!
+            </Typography>
+            
+            <Alert 
+              severity="info" 
+              icon={<Info fontSize="large" />}
+              sx={{ 
+                maxWidth: '500px', 
+                mx: 'auto', 
+                mb: 4, 
+                py: 2,
+                fontSize: '1.1rem',
+                '& .MuiAlert-message': { width: '100%' }
+              }}
+            >
+              <AlertTitle sx={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}>
+                חשוב לדעת
+              </AlertTitle>
+              <Box sx={{ textAlign: 'center', fontWeight: 'medium' }}>
+                <Typography variant="body1" paragraph component="div" sx={{ fontWeight: 'bold' }}>
+                  בקשת התור נשלחה לאישור הספר
+                </Typography>
+                <Typography variant="body1" component="div">
+                  לאחר אישור הבקשה, תקבל הודעת אישור ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}
+                </Typography>
+              </Box>
+            </Alert>
+            
+            <Box sx={{ maxWidth: '500px', mx: 'auto', mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
+              <Typography variant="h6" gutterBottom color="primary">
+                סיכום הבקשה
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">
+                    שירותים:
+                  </Typography>
+                  <List dense>
+                    {bookingData.services.map((serviceId) => (
+                      <ListItem key={serviceId} sx={{ py: 0.5 }}>
+                        <ListItemIcon sx={{ minWidth: '30px' }}>
+                          <ContentCut fontSize="small" color="primary" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
+                          secondary={`₪${servicesMap[serviceId]?.price || 0}`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                  <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
+                    סה"כ: ₪{calculateTotalPrice()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    תאריך:
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : ''}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    שעה:
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {bookingData.time}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    שם:
+                  </Typography>
+                  <Typography variant="body1" fontWeight="medium">
+                    {bookingData.name}
+                  </Typography>
+                </Grid>
+                {bookingData.withChildren && (
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="text.secondary">
+                      ילדים:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {bookingData.childrenCount} ילדים
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+            <Box sx={{ mt: 4 }}>
+              <Button 
+                component={Link} 
+                href="/" 
+                variant="contained" 
+                color="primary"
+                startIcon={<Home />}
+                sx={{ mx: 1 }}
+              >
+                חזרה לדף הבית
+              </Button>
+            </Box>
+          </Box>
+        </Fade>
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Typography variant="h6" gutterBottom>
+    <Box sx={{ maxWidth: '800px', mx: 'auto', p: 3 }}>
+      <Typography variant="h4" gutterBottom align="center" color="primary.main">
         אישור הזמנה
       </Typography>
       
-      <Alert 
-        severity="info" 
-        sx={{ mb: 4 }}
-        icon={<Info />}
-      >
-        <AlertTitle>שים לב</AlertTitle>
-        <Typography component="div" sx={{ fontWeight: 'medium' }}>
-          אנא בדוק את פרטי ההזמנה לפני שליחת הבקשה. התור יקבע רק לאחר אישור הספר.
-        </Typography>
-      </Alert>
-      
-      {error && (
-        <Alert 
-          severity="error" 
-          sx={{ mb: 4 }}
-          icon={<ErrorIcon />}
-        >
-          <AlertTitle>שגיאה</AlertTitle>
-          <Typography component="div">{error}</Typography>
-        </Alert>
-      )}
-      
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 4 }}>
+      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom color="primary">
           פרטי ההזמנה
         </Typography>
         
-        <List>
-          <ListItem>
-            <ListItemIcon>
-              <CalendarMonth color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="תאריך" 
-              secondary={bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : ''} 
-            />
-          </ListItem>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <CalendarMonth color="primary" sx={{ mr: 1 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  תאריך:
+                </Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : ''}
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
           
-          <ListItem>
-            <ListItemIcon>
-              <AccessTime color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="שעה" 
-              secondary={bookingData.time} 
-            />
-          </ListItem>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <AccessTime color="primary" sx={{ mr: 1 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  שעה:
+                </Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {bookingData.time}
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
           
-          <ListItem>
-            <ListItemIcon>
-              <ContentCut color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="שירותים" 
-              secondary={
-                <List dense>
-                  {bookingData.services.map((serviceId) => (
-                    <ListItem key={serviceId} sx={{ py: 0.5 }}>
-                      <ListItemText 
-                        primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
-                        secondary={`₪${servicesMap[serviceId]?.price || 0}`}
-                      />
-                    </ListItem>
-                  ))}
-                  <ListItem sx={{ py: 0.5 }}>
-                    <ListItemText 
-                      primary="סה״כ" 
-                      primaryTypographyProps={{ fontWeight: 'bold' }}
-                      secondary={`₪${calculateTotalPrice()}`}
-                      secondaryTypographyProps={{ fontWeight: 'bold' }}
-                    />
-                  </ListItem>
-                </List>
-              }
-            />
-          </ListItem>
+          <Grid item xs={12}>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="subtitle1" gutterBottom fontWeight="medium">
+              שירותים שנבחרו:
+            </Typography>
+            <List dense>
+              {bookingData.services.map((serviceId) => (
+                <ListItem key={serviceId} sx={{ py: 0.5 }}>
+                  <ListItemIcon sx={{ minWidth: '30px' }}>
+                    <ContentCut fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
+                    secondary={`₪${servicesMap[serviceId]?.price || 0}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
+              סה"כ: ₪{calculateTotalPrice()}
+            </Typography>
+          </Grid>
           
-          <ListItem>
-            <ListItemIcon>
-              <Person color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="מספר אנשים" 
-              secondary={bookingData.people}
-            />
-          </ListItem>
-          
-          {bookingData.withChildren && (
-            <ListItem>
-              <ListItemIcon>
-                <ChildCare color="primary" />
-              </ListItemIcon>
-              <ListItemText 
-                primary="מספר ילדים" 
-                secondary={bookingData.childrenCount}
-              />
-            </ListItem>
-          )}
-          
-          <ListItem>
-            <ListItemIcon>
-              <Notifications color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="אופן קבלת עדכונים" 
-              secondary={notificationMethodsMap[bookingData.notificationMethod] || 'לא נבחר'}
-            />
-          </ListItem>
-          
-          <Divider sx={{ my: 1 }} />
-          
-          <ListItem>
-            <ListItemIcon>
-              <Person color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="שם מלא" 
-              secondary={bookingData.name || 'לא הוזן'}
-            />
-          </ListItem>
-          
-          <ListItem>
-            <ListItemIcon>
-              <Phone color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="טלפון" 
-              secondary={bookingData.phone || 'לא הוזן'}
-            />
-          </ListItem>
-          
-          {bookingData.email && (
-            <ListItem>
-              <ListItemIcon>
-                <Email color="primary" />
-              </ListItemIcon>
-              <ListItemText 
-                primary="אימייל" 
-                secondary={bookingData.email}
-              />
-            </ListItem>
-          )}
-          
-          {bookingData.notes && (
-            <ListItem>
-              <ListItemIcon>
-                <Note color="primary" />
-              </ListItemIcon>
-              <ListItemText 
-                primary="הערות" 
-                secondary={bookingData.notes}
-              />
-            </ListItem>
-          )}
-        </List>
+          <Grid item xs={12}>
+            <Divider sx={{ my: 1 }} />
+            <Typography variant="subtitle1" gutterBottom fontWeight="medium">
+              פרטי לקוח:
+            </Typography>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Person color="primary" sx={{ mr: 1 }} />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      שם:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {bookingData.name}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Phone color="primary" sx={{ mr: 1 }} />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      טלפון:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {bookingData.phone}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              {bookingData.email && (
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Email color="primary" sx={{ mr: 1 }} />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        אימייל:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {bookingData.email}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+              
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Notifications color="primary" sx={{ mr: 1 }} />
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      שיטת התראה:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {notificationMethodsMap[bookingData.notificationMethod] || 'לא צוין'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              {bookingData.withChildren && (
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <ChildCare color="primary" sx={{ mr: 1 }} />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        ילדים:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {bookingData.childrenCount} ילדים
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+              
+              {bookingData.notes && (
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                    <Note color="primary" sx={{ mr: 1, mt: 0.5 }} />
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        הערות:
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {bookingData.notes}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          </Grid>
+        </Grid>
       </Paper>
       
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <Button 
-          variant="contained" 
-          color="primary" 
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          <AlertTitle>שגיאה</AlertTitle>
+          {error}
+        </Alert>
+      )}
+      
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+        <Button
+          variant="contained"
+          color="primary"
           size="large"
           onClick={handleSubmit}
           disabled={isSubmitting}
           startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <CheckCircle />}
-          sx={{ px: 4, py: 1.5, borderRadius: 2 }}
+          sx={{ minWidth: '200px' }}
         >
           {isSubmitting ? 'שולח...' : 'אישור והזמנת תור'}
         </Button>

@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   trailingSlash: true,
+  // Add webpack configuration to handle JSON imports
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.json$/,
+      type: 'javascript/auto',
+      resolve: { fullySpecified: false },
+    });
+    return config;
+  },
 };
 
 export default nextConfig;

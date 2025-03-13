@@ -61,8 +61,7 @@ import {
   deleteAppointment,
   updateAppointmentStatus,
   Appointment as AppointmentType,
-  getAllAppointmentsFromAllCollections,
-  subscribeToAppointments
+  getAllAppointmentsFromAllCollections
 } from '@/firebase/services/appointmentService';
 import VacationManager from '@/components/admin/VacationManager';
 
@@ -127,40 +126,11 @@ export default function AdminDashboard() {
     }
     
     if (!authLoading && isAdmin) {
-      // Set up real-time listener instead of one-time fetch
-      let unsubscribe: (() => void) | null = null;
-      
-      const setupRealTimeListener = async () => {
-        try {
-          setLoading(true);
-          
-          // Subscribe to real-time updates
-          unsubscribe = subscribeToAppointments((data) => {
-            console.log('Real-time appointment update received:', data.length, 'appointments');
-            setAppointments(data);
-            setLoading(false);
-          });
-        } catch (error) {
-          console.error('Error setting up real-time listener:', error);
-          setLoading(false);
-          
-          // Fallback to regular fetch if real-time listener fails
-          fetchAppointments();
-        }
-      };
-      
-      setupRealTimeListener();
-      
-      // Clean up listener on component unmount
-      return () => {
-        if (unsubscribe) {
-          unsubscribe();
-        }
-      };
+      fetchAppointments();
     }
   }, [authLoading, isAdmin, router]);
   
-  // Keep fetchAppointments as a fallback method
+  // Fetch appointments function
   const fetchAppointments = async () => {
     try {
       setLoading(true);
@@ -188,9 +158,8 @@ export default function AdminDashboard() {
     setDateFilter(filter);
   };
   
-  // Handle refresh button click - now just resets the listener
+  // Handle refresh button click
   const handleRefresh = () => {
-    // Fetch appointments manually as a fallback
     fetchAppointments();
   };
   
@@ -207,18 +176,18 @@ export default function AdminDashboard() {
       setStatusUpdateLoading(appointmentId);
       await updateAppointmentStatus(appointmentId, newStatus);
       
-      // No need to update local state manually as the real-time listener will handle it
-      // Just show loading state until the update comes through
-      
-      // Optional: Add a timeout to reset loading state in case the update takes too long
-      setTimeout(() => {
-        setStatusUpdateLoading(null);
-      }, 3000);
+      // Update local state
+      setAppointments(prev => 
+        prev.map(appointment => 
+          appointment.id === appointmentId 
+            ? { ...appointment, status: newStatus } 
+            : appointment
+        )
+      );
     } catch (error) {
       console.error('Error updating appointment status:', error);
+    } finally {
       setStatusUpdateLoading(null);
-      
-      // Show error notification or handle error
     }
   };
   
@@ -737,7 +706,7 @@ export default function AdminDashboard() {
               if (appointmentToDelete) {
                 try {
                   await deleteAppointment(appointmentToDelete);
-                  // No need to update local state as the real-time listener will handle it
+                  setAppointments(prev => prev.filter(a => a.id !== appointmentToDelete));
                   setDeleteDialogOpen(false);
                   setAppointmentToDelete(null);
                 } catch (error) {
