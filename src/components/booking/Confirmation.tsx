@@ -62,8 +62,36 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
   const router = useRouter();
 
   const handleSubmit = () => {
-    // Here you would typically send the booking data to your backend
-    console.log('Booking submitted:', bookingData);
+    // Create a booking object with all necessary data
+    const booking = {
+      id: Date.now().toString(), // Generate a unique ID based on timestamp
+      date: bookingData.date,
+      service: bookingData.service,
+      people: bookingData.people,
+      withChildren: bookingData.withChildren || false,
+      childrenCount: bookingData.childrenCount || 0,
+      notificationMethod: bookingData.notificationMethod,
+      name: bookingData.name,
+      phone: bookingData.phone,
+      email: bookingData.email || '',
+      notes: bookingData.notes || '',
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    // Get existing appointments from localStorage or initialize empty array
+    const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
+    
+    // Add new appointment to the array
+    existingAppointments.push(booking);
+    
+    // Save updated appointments array back to localStorage
+    localStorage.setItem('appointments', JSON.stringify(existingAppointments));
+    
+    // Log for debugging
+    console.log('Booking submitted:', booking);
+    console.log('All appointments:', existingAppointments);
+    
     setIsSubmitted(true);
   };
 

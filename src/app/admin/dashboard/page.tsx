@@ -53,7 +53,8 @@ const mockAppointments = [
     phone: '0501234567',
     email: 'israel@example.com',
     notes: '',
-    status: 'pending'
+    status: 'pending',
+    createdAt: new Date()
   },
   {
     id: '2',
@@ -67,7 +68,8 @@ const mockAppointments = [
     phone: '0521234567',
     email: '',
     notes: 'מבקש תספורת קצרה',
-    status: 'pending'
+    status: 'pending',
+    createdAt: new Date()
   },
   {
     id: '3',
@@ -81,7 +83,8 @@ const mockAppointments = [
     phone: '0531234567',
     email: 'david@example.com',
     notes: 'שני ילדים',
-    status: 'approved'
+    status: 'approved',
+    createdAt: new Date()
   },
   {
     id: '4',
@@ -95,7 +98,8 @@ const mockAppointments = [
     phone: '0541234567',
     email: 'yaakov@example.com',
     notes: '',
-    status: 'approved'
+    status: 'approved',
+    createdAt: new Date()
   }
 ];
 
@@ -121,43 +125,106 @@ const statusColors: Record<string, string> = {
   'rejected': 'error'
 };
 
+// Define appointment interface
+interface Appointment {
+  id: string;
+  date: Date;
+  service: string;
+  people: number;
+  withChildren: boolean;
+  childrenCount: number;
+  notificationMethod: string;
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+  status: string;
+  createdAt: Date;
+}
+
 export default function AdminDashboard() {
   const [tabValue, setTabValue] = useState(0);
-  const [appointments, setAppointments] = useState(mockAppointments);
-  const { isAdmin, loading } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     // If not loading and not admin, redirect to home
-    if (!loading && !isAdmin) {
+    if (!authLoading && !isAdmin) {
       router.push('/auth/login');
     }
-  }, [isAdmin, loading, router]);
+  }, [isAdmin, authLoading, router]);
+
+  // Load appointments from localStorage
+  useEffect(() => {
+    const loadAppointments = () => {
+      try {
+        // Get appointments from localStorage
+        const storedAppointments = localStorage.getItem('appointments');
+        
+        if (storedAppointments) {
+          // Parse the JSON string
+          const parsedAppointments = JSON.parse(storedAppointments);
+          
+          // Convert date strings back to Date objects
+          const formattedAppointments = parsedAppointments.map((appointment: any) => ({
+            ...appointment,
+            date: new Date(appointment.date),
+            createdAt: new Date(appointment.createdAt)
+          }));
+          
+          setAppointments(formattedAppointments);
+        } else {
+          // If no appointments in localStorage, use mock data for demonstration
+          setAppointments(mockAppointments);
+        }
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+        // Fallback to mock data if there's an error
+        setAppointments(mockAppointments);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadAppointments();
+  }, []);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
   const handleApprove = (id: string) => {
-    setAppointments(appointments.map(appointment => 
+    const updatedAppointments = appointments.map((appointment: any) => 
       appointment.id === id ? { ...appointment, status: 'approved' } : appointment
-    ));
+    );
+    
+    setAppointments(updatedAppointments);
+    
+    // Update localStorage
+    localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
   };
 
   const handleReject = (id: string) => {
-    setAppointments(appointments.map(appointment => 
+    const updatedAppointments = appointments.map((appointment: any) => 
       appointment.id === id ? { ...appointment, status: 'rejected' } : appointment
-    ));
+    );
+    
+    setAppointments(updatedAppointments);
+    
+    // Update localStorage
+    localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
   };
 
-  const filteredAppointments = appointments.filter(appointment => {
+  const filteredAppointments = appointments.filter((appointment: any) => {
     if (tabValue === 0) return appointment.status === 'pending';
     if (tabValue === 1) return appointment.status === 'approved';
     return true;
   });
 
   // Show loading state
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress />
@@ -202,7 +269,7 @@ export default function AdminDashboard() {
               </Typography>
             </Grid>
           ) : (
-            filteredAppointments.map((appointment) => (
+            filteredAppointments.map((appointment: any) => (
               <Grid item xs={12} md={6} key={appointment.id}>
                 <Card 
                   elevation={2} 
