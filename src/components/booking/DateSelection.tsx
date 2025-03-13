@@ -13,7 +13,7 @@ import {
   FormControlLabel,
   Radio
 } from '@mui/material';
-import { format, addDays, isAfter, isBefore, isEqual, parseISO, set } from 'date-fns';
+import { format, addDays, isAfter, isBefore, isEqual, parseISO, set, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 
 // Define available time slots
@@ -102,6 +102,22 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     return selectedDate && isEqual(date, selectedDate);
   };
 
+  // Check if a time slot is in the past for the current day
+  const isTimeSlotPast = (timeSlot: string): boolean => {
+    if (!selectedDate) return false;
+    
+    const now = new Date();
+    
+    // Only apply this check for the current day
+    if (!isSameDay(selectedDate, now)) return false;
+    
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    const timeSlotDate = new Date(selectedDate);
+    timeSlotDate.setHours(hours, minutes, 0, 0);
+    
+    return isBefore(timeSlotDate, now);
+  };
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -139,18 +155,26 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
           </Typography>
           
           <Grid container spacing={2}>
-            {availableTimeSlots.map((time) => (
-              <Grid item key={time}>
-                <Button
-                  variant={selectedTime === time ? "contained" : "outlined"}
-                  onClick={() => handleTimeSelect(time)}
-                  color="primary"
-                  sx={{ minWidth: '80px' }}
-                >
-                  {time}
-                </Button>
-              </Grid>
-            ))}
+            {availableTimeSlots.map((time) => {
+              const isPast = isTimeSlotPast(time);
+              return (
+                <Grid item key={time}>
+                  <Button
+                    variant={selectedTime === time ? "contained" : "outlined"}
+                    onClick={() => !isPast && handleTimeSelect(time)}
+                    color="primary"
+                    disabled={isPast}
+                    sx={{ 
+                      minWidth: '80px',
+                      opacity: isPast ? 0.5 : 1,
+                      cursor: isPast ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {time}
+                  </Button>
+                </Grid>
+              );
+            })}
           </Grid>
         </>
       )}
