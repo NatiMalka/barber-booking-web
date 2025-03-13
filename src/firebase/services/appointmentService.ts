@@ -140,6 +140,59 @@ export const getAppointmentsByPhone = async (phone: string) => {
   }
 };
 
+// Get appointments for a specific date
+export const getAppointmentsByDate = async (date: Date) => {
+  try {
+    console.log(`getAppointmentsByDate: מתחיל לקבל תורים לתאריך ${date.toDateString()}`);
+    
+    // Create start and end of the selected date
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    // Convert to Firestore Timestamp
+    const startTimestamp = Timestamp.fromDate(startOfDay);
+    const endTimestamp = Timestamp.fromDate(endOfDay);
+    
+    console.log(`getAppointmentsByDate: מחפש תורים בין ${startOfDay.toISOString()} ל-${endOfDay.toISOString()}`);
+    
+    // Use a simpler query that doesn't require a composite index
+    // Just filter by date range and then filter the results in JavaScript
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('date', '>=', startTimestamp),
+      where('date', '<=', endTimestamp)
+    );
+    
+    console.log('getAppointmentsByDate: שולח שאילתה ל-Firebase');
+    const querySnapshot = await getDocs(q);
+    console.log(`getAppointmentsByDate: התקבלו ${querySnapshot.docs.length} תורים לתאריך ${date.toDateString()}`);
+    
+    // Map the results with detailed logs and filter by status in JavaScript
+    const allAppointments = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log(`getAppointmentsByDate: תור ${doc.id}:`, data);
+      return {
+        id: doc.id,
+        ...data
+      } as Appointment;
+    });
+    
+    // Filter appointments by status
+    const appointments = allAppointments.filter(
+      appointment => appointment.status === 'pending' || appointment.status === 'approved'
+    );
+    
+    console.log(`getAppointmentsByDate: כל התורים לתאריך ${date.toDateString()}:`, appointments);
+    return appointments;
+  } catch (error) {
+    console.error(`Error getting appointments for date ${date.toDateString()}:`, error);
+    throw error;
+  }
+};
+
 // Get a single appointment by ID
 export const getAppointmentById = async (id: string) => {
   try {

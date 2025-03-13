@@ -11,10 +11,14 @@ import {
   FormLabel,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Radio,
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
 import { format, addDays, isAfter, isBefore, isEqual, parseISO, set, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { getAppointmentsByDate } from '@/firebase/services/appointmentService';
+import { EventBusy } from '@mui/icons-material';
 
 // Define available time slots
 const timeSlots = [
@@ -44,6 +48,8 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [selectedTime, setSelectedTime] = useState<string | null>(bookingData.time || null);
+  const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Generate available dates (next 14 days, excluding Saturdays)
   useEffect(() => {
@@ -87,6 +93,30 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     }
   }, [selectedDate]);
 
+  // Fetch booked appointments for the selected date
+  useEffect(() => {
+    if (!selectedDate) return;
+    
+    const fetchBookedAppointments = async () => {
+      try {
+        setLoading(true);
+        const appointments = await getAppointmentsByDate(selectedDate);
+        
+        // Extract the time slots that are already booked
+        const booked = appointments.map(appointment => appointment.time);
+        setBookedTimeSlots(booked);
+      } catch (error) {
+        console.error('Error fetching booked appointments:', error);
+        // If there's an error, assume no slots are booked to allow the user to continue
+        setBookedTimeSlots([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBookedAppointments();
+  }, [selectedDate]);
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setSelectedTime(null);
@@ -116,6 +146,11 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     timeSlotDate.setHours(hours, minutes, 0, 0);
     
     return isBefore(timeSlotDate, now);
+  };
+
+  // Check if a time slot is already booked
+  const isTimeSlotBooked = (timeSlot: string): boolean => {
+    return bookedTimeSlots.includes(timeSlot);
   };
 
   return (
@@ -154,28 +189,46 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
             בחר שעה
           </Typography>
           
-          <Grid container spacing={2}>
-            {availableTimeSlots.map((time) => {
-              const isPast = isTimeSlotPast(time);
-              return (
-                <Grid item key={time}>
-                  <Button
-                    variant={selectedTime === time ? "contained" : "outlined"}
-                    onClick={() => !isPast && handleTimeSelect(time)}
-                    color="primary"
-                    disabled={isPast}
-                    sx={{ 
-                      minWidth: '80px',
-                      opacity: isPast ? 0.5 : 1,
-                      cursor: isPast ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {time}
-                  </Button>
-                </Grid>
-              );
-            })}
-          </Grid>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {availableTimeSlots.map((time) => {
+                const isPast = isTimeSlotPast(time);
+                const isBooked = isTimeSlotBooked(time);
+                const isDisabled = isPast || isBooked;
+                
+                return (
+                  <Grid item key={time}>
+                    <Tooltip title={isBooked ? "תור זה כבר תפוס" : isPast ? "זמן זה כבר עבר" : ""} arrow>
+                      <span>
+                        <Button
+                          variant={selectedTime === time ? "contained" : "outlined"}
+                          onClick={() => !isDisabled && handleTimeSelect(time)}
+                          color="primary"
+                          disabled={isDisabled}
+                          startIcon={isBooked ? <EventBusy /> : undefined}
+                          sx={{ 
+                            minWidth: '80px',
+                            opacity: isDisabled ? 0.5 : 1,
+                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                            bgcolor: isBooked ? 'rgba(211, 47, 47, 0.1)' : undefined,
+                            '&:hover': {
+                              bgcolor: isBooked ? 'rgba(211, 47, 47, 0.2)' : undefined
+                            }
+                          }}
+                        >
+                          {time}
+                        </Button>
+                      </span>
+                    </Tooltip>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
         </>
       )}
     </Box>
