@@ -16,7 +16,8 @@ import {
   Button,
   Stepper,
   Step,
-  StepLabel
+  StepLabel,
+  CircularProgress
 } from '@mui/material';
 import { 
   CalendarMonth, 
@@ -31,12 +32,14 @@ import {
   Home,
   ChildCare,
   HourglassTop,
-  Info
+  Info,
+  Error as ErrorIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createAppointment } from '@/firebase/services/appointmentService';
 
 // Define services map for display
 const servicesMap: Record<string, string> = {
@@ -59,49 +62,51 @@ interface ConfirmationProps {
 
 export default function Confirmation({ bookingData }: ConfirmationProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleSubmit = () => {
-    // Create a booking object with all necessary data
-    const bookingDate = new Date(bookingData.date);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError(null);
     
-    // הוספת השעה לאובייקט התאריך
-    if (bookingData.time) {
-      const [hours, minutes] = bookingData.time.split(':').map(Number);
-      bookingDate.setHours(hours, minutes, 0, 0);
+    try {
+      // Create a booking object with all necessary data
+      const bookingDate = new Date(bookingData.date);
+      
+      // הוספת השעה לאובייקט התאריך
+      if (bookingData.time) {
+        const [hours, minutes] = bookingData.time.split(':').map(Number);
+        bookingDate.setHours(hours, minutes, 0, 0);
+      }
+      
+      // Prepare appointment data for Firebase
+      const appointmentData = {
+        date: bookingDate,
+        time: bookingData.time,
+        service: bookingData.service,
+        people: bookingData.people,
+        withChildren: bookingData.withChildren || false,
+        childrenCount: bookingData.childrenCount || 0,
+        notificationMethod: bookingData.notificationMethod,
+        name: bookingData.name,
+        phone: bookingData.phone,
+        email: bookingData.email || '',
+        notes: bookingData.notes || ''
+      };
+      
+      // Send to Firebase using the createAppointment service
+      console.log('Sending appointment to Firebase:', appointmentData);
+      const createdAppointment = await createAppointment(appointmentData);
+      console.log('Appointment created successfully:', createdAppointment);
+      
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error('Error submitting appointment:', error);
+      setError('אירעה שגיאה בשמירת התור. אנא נסה שנית.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    const booking = {
-      id: Date.now().toString(), // Generate a unique ID based on timestamp
-      date: bookingDate,
-      time: bookingData.time, // שמירת השעה גם כשדה נפרד למקרה הצורך
-      service: bookingData.service,
-      people: bookingData.people,
-      withChildren: bookingData.withChildren || false,
-      childrenCount: bookingData.childrenCount || 0,
-      notificationMethod: bookingData.notificationMethod,
-      name: bookingData.name,
-      phone: bookingData.phone,
-      email: bookingData.email || '',
-      notes: bookingData.notes || '',
-      status: 'pending',
-      createdAt: new Date()
-    };
-
-    // Get existing appointments from localStorage or initialize empty array
-    const existingAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    
-    // Add new appointment to the array
-    existingAppointments.push(booking);
-    
-    // Save updated appointments array back to localStorage
-    localStorage.setItem('appointments', JSON.stringify(existingAppointments));
-    
-    // Log for debugging
-    console.log('Booking submitted:', booking);
-    console.log('All appointments:', existingAppointments);
-    
-    setIsSubmitted(true);
   };
 
   // Define the steps for the booking process
@@ -222,6 +227,17 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
         </Typography>
       </Alert>
       
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 4 }}
+          icon={<ErrorIcon />}
+        >
+          <AlertTitle>שגיאה</AlertTitle>
+          <Typography>{error}</Typography>
+        </Alert>
+      )}
+      
       <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 4 }}>
         <Typography variant="h6" gutterBottom color="primary">
           פרטי ההזמנה
@@ -340,15 +356,17 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
         </List>
       </Paper>
       
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-          color="primary"
+      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
           size="large"
           onClick={handleSubmit}
-          sx={{ px: 4, py: 1.2 }}
+          disabled={isSubmitting}
+          startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <CheckCircle />}
+          sx={{ px: 4, py: 1.5, borderRadius: 2 }}
         >
-          שלח בקשת תור
+          {isSubmitting ? 'שולח...' : 'אישור והזמנת תור'}
         </Button>
       </Box>
     </Box>
