@@ -63,9 +63,18 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
 
   const handleSubmit = () => {
     // Create a booking object with all necessary data
+    const bookingDate = new Date(bookingData.date);
+    
+    // הוספת השעה לאובייקט התאריך
+    if (bookingData.time) {
+      const [hours, minutes] = bookingData.time.split(':').map(Number);
+      bookingDate.setHours(hours, minutes, 0, 0);
+    }
+    
     const booking = {
       id: Date.now().toString(), // Generate a unique ID based on timestamp
-      date: bookingData.date,
+      date: bookingDate,
+      time: bookingData.time, // שמירת השעה גם כשדה נפרד למקרה הצורך
       service: bookingData.service,
       people: bookingData.people,
       withChildren: bookingData.withChildren || false,

@@ -129,6 +129,7 @@ const statusColors: Record<string, string> = {
 interface Appointment {
   id: string;
   date: Date;
+  time?: string;
   service: string;
   people: number;
   withChildren: boolean;
@@ -303,7 +304,7 @@ export default function AdminDashboard() {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <AccessTime fontSize="small" color="primary" sx={{ mr: 1 }} />
                       <Typography variant="body2">
-                        {format(appointment.date, 'HH:mm')}
+                        {appointment.time || format(appointment.date, 'HH:mm')}
                       </Typography>
                     </Box>
                     
