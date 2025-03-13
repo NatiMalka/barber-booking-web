@@ -31,7 +31,8 @@ import {
   Person, 
   Phone, 
   Email,
-  Notifications
+  Notifications,
+  ChildCare
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -45,6 +46,8 @@ const mockAppointments = [
     date: new Date(2025, 2, 15, 10, 0),
     service: 'haircut',
     people: 1,
+    withChildren: true,
+    childrenCount: 2,
     notificationMethod: 'whatsapp',
     name: 'ישראל ישראלי',
     phone: '0501234567',
@@ -57,6 +60,8 @@ const mockAppointments = [
     date: new Date(2025, 2, 15, 11, 0),
     service: 'combo',
     people: 1,
+    withChildren: false,
+    childrenCount: 0,
     notificationMethod: 'sms',
     name: 'משה כהן',
     phone: '0521234567',
@@ -69,6 +74,8 @@ const mockAppointments = [
     date: new Date(2025, 2, 16, 14, 30),
     service: 'kids',
     people: 2,
+    withChildren: true,
+    childrenCount: 3,
     notificationMethod: 'whatsapp',
     name: 'דוד לוי',
     phone: '0531234567',
@@ -81,6 +88,8 @@ const mockAppointments = [
     date: new Date(2025, 2, 17, 16, 0),
     service: 'beard',
     people: 1,
+    withChildren: false,
+    childrenCount: 0,
     notificationMethod: 'email',
     name: 'יעקב אברהם',
     phone: '0541234567',
@@ -250,6 +259,18 @@ export default function AdminDashboard() {
                         {appointment.people}
                       </Typography>
                     </Box>
+                    
+                    {appointment.withChildren && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="body2" fontWeight="bold" sx={{ mr: 1 }}>
+                          <ChildCare fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                          מספר ילדים:
+                        </Typography>
+                        <Typography variant="body2">
+                          {appointment.childrenCount}
+                        </Typography>
+                      </Box>
+                    )}
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" fontWeight="bold" sx={{ mr: 1 }}>

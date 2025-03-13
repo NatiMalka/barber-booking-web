@@ -26,6 +26,8 @@ export default function BookingPage() {
     time: null,
     service: '',
     people: 1,
+    withChildren: false,
+    childrenCount: 0,
     notificationMethod: 'whatsapp',
     name: '',
     phone: '',

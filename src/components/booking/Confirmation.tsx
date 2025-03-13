@@ -28,7 +28,8 @@ import {
   Note,
   Notifications,
   CheckCircle,
-  Home
+  Home,
+  ChildCare
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -114,6 +115,16 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
                 {bookingData.name}
               </Typography>
             </Grid>
+            {bookingData.withChildren && (
+              <Grid item xs={12}>
+                <Typography variant="body2" color="text.secondary">
+                  ילדים:
+                </Typography>
+                <Typography variant="body1" fontWeight="medium">
+                  {bookingData.childrenCount} ילדים
+                </Typography>
+              </Grid>
+            )}
           </Grid>
         </Box>
         <Box sx={{ mt: 4 }}>
@@ -190,6 +201,18 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
               secondary={bookingData.people}
             />
           </ListItem>
+          
+          {bookingData.withChildren && (
+            <ListItem>
+              <ListItemIcon>
+                <ChildCare color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="מספר ילדים" 
+                secondary={bookingData.childrenCount}
+              />
+            </ListItem>
+          )}
           
           <ListItem>
             <ListItemIcon>

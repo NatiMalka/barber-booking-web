@@ -15,9 +15,13 @@ import {
   CardContent,
   CardActionArea,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Checkbox,
+  FormGroup,
+  Collapse,
+  Divider
 } from '@mui/material';
-import { ContentCut, Timer, Person } from '@mui/icons-material';
+import { ContentCut, Timer, Person, ChildCare } from '@mui/icons-material';
 
 // Define available services
 const services = [
@@ -56,6 +60,8 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
   const [selectedService, setSelectedService] = useState<string>(bookingData.service || '');
   const [people, setPeople] = useState<number>(bookingData.people || 1);
   const [notificationMethod, setNotificationMethod] = useState<string>(bookingData.notificationMethod || 'whatsapp');
+  const [withChildren, setWithChildren] = useState<boolean>(bookingData.withChildren || false);
+  const [childrenCount, setChildrenCount] = useState<number>(bookingData.childrenCount || 0);
 
   const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
@@ -73,6 +79,26 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
   const handleNotificationMethodChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNotificationMethod(event.target.value);
     onDataChange({ notificationMethod: event.target.value });
+  };
+
+  const handleWithChildrenChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = event.target.checked;
+    setWithChildren(checked);
+    onDataChange({ withChildren: checked });
+    
+    // Reset children count if unchecked
+    if (!checked) {
+      setChildrenCount(0);
+      onDataChange({ childrenCount: 0 });
+    }
+  };
+
+  const handleChildrenCountChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value);
+    if (value >= 0 && value <= 5) {
+      setChildrenCount(value);
+      onDataChange({ childrenCount: value });
+    }
   };
 
   return (
@@ -135,6 +161,45 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
           sx={{ width: '120px' }}
         />
       </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <FormGroup>
+          <FormControlLabel 
+            control={
+              <Checkbox 
+                checked={withChildren} 
+                onChange={handleWithChildrenChange} 
+                color="primary"
+              />
+            } 
+            label="מגיע עם ילדים?" 
+          />
+        </FormGroup>
+        
+        <Collapse in={withChildren}>
+          <Box sx={{ pl: 4, pt: 1, pb: 2 }}>
+            <Typography variant="body1" gutterBottom>
+              כמה ילדים?
+            </Typography>
+            <TextField
+              type="number"
+              value={childrenCount}
+              onChange={handleChildrenCountChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ChildCare />
+                  </InputAdornment>
+                ),
+                inputProps: { min: 1, max: 5 }
+              }}
+              sx={{ width: '120px' }}
+            />
+          </Box>
+        </Collapse>
+      </Box>
+
+      <Divider sx={{ my: 3 }} />
 
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" gutterBottom>
