@@ -129,12 +129,6 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
                       {service.name}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Timer fontSize="small" color="action" sx={{ mr: 1 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {service.duration} דקות
-                    </Typography>
-                  </Box>
                 </CardContent>
               </CardActionArea>
             </Card>

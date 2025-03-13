@@ -50,9 +50,6 @@ function ServiceCard({ title, description, icon, duration }: ServiceProps) {
         <Typography variant="body2" color="text.secondary" paragraph>
           {description}
         </Typography>
-        <Typography variant="body2" color="primary" fontWeight="bold">
-          משך זמן: {duration}
-        </Typography>
       </CardContent>
     </Card>
   );
