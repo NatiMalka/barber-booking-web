@@ -29,7 +29,9 @@ import {
   Notifications,
   CheckCircle,
   Home,
-  ChildCare
+  ChildCare,
+  HourglassTop,
+  Info
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -71,16 +73,39 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
   if (isSubmitted) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
-        <CheckCircle color="success" sx={{ fontSize: 80, mb: 2 }} />
-        <Typography variant="h4" gutterBottom color="success.main">
-          התור נקבע בהצלחה!
+        <HourglassTop color="primary" sx={{ fontSize: 80, mb: 2 }} />
+        <Typography variant="h4" gutterBottom color="primary.main">
+          בקשת התור נשלחה!
         </Typography>
-        <Typography variant="body1" paragraph>
-          פרטי התור נשלחו אליך ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}.
-        </Typography>
+        
+        <Alert 
+          severity="info" 
+          icon={<Info fontSize="large" />}
+          sx={{ 
+            maxWidth: '500px', 
+            mx: 'auto', 
+            mb: 4, 
+            py: 2,
+            fontSize: '1.1rem',
+            '& .MuiAlert-message': { width: '100%' }
+          }}
+        >
+          <AlertTitle sx={{ fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}>
+            חשוב לדעת
+          </AlertTitle>
+          <Box sx={{ textAlign: 'center', fontWeight: 'medium' }}>
+            <Typography variant="body1" paragraph sx={{ fontWeight: 'bold' }}>
+              בקשת התור נשלחה לאישור הספר
+            </Typography>
+            <Typography variant="body1">
+              לאחר אישור הבקשה, תקבל הודעת אישור ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}
+            </Typography>
+          </Box>
+        </Alert>
+        
         <Box sx={{ maxWidth: '500px', mx: 'auto', mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
           <Typography variant="h6" gutterBottom color="primary">
-            סיכום הזמנה
+            סיכום הבקשה
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={6}>
@@ -149,9 +174,15 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
         אישור הזמנה
       </Typography>
       
-      <Alert severity="info" sx={{ mb: 4 }}>
+      <Alert 
+        severity="info" 
+        sx={{ mb: 4 }}
+        icon={<Info />}
+      >
         <AlertTitle>שים לב</AlertTitle>
-        אנא בדוק את פרטי ההזמנה לפני האישור הסופי.
+        <Typography sx={{ fontWeight: 'medium' }}>
+          אנא בדוק את פרטי ההזמנה לפני שליחת הבקשה. התור יקבע רק לאחר אישור הספר.
+        </Typography>
       </Alert>
       
       <Paper elevation={2} sx={{ p: 3, borderRadius: 2, mb: 4 }}>
@@ -280,7 +311,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
           onClick={handleSubmit}
           sx={{ px: 4, py: 1.2 }}
         >
-          אשר הזמנה
+          שלח בקשת תור
         </Button>
       </Box>
     </Box>
