@@ -19,18 +19,19 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    // Check if user is barber admin from localStorage
-    const isBarberAdmin = typeof window !== 'undefined' && localStorage.getItem('isBarberAdmin') === 'true';
+    // Check if user is barber admin from localStorage - moved inside the effect to ensure it runs on client
+    const checkBarberAdmin = () => {
+      try {
+        return localStorage.getItem('isBarberAdmin') === 'true';
+      } catch (error) {
+        console.error('Error accessing localStorage:', error);
+        return false;
+      }
+    };
     
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthState({
-        user,
-        loading: false,
-        isAdmin: isBarberAdmin || isUserAdmin(user)
-      });
-    });
-
-    // If there's no auth state change but we have barber admin in localStorage
+    const isBarberAdmin = typeof window !== 'undefined' && checkBarberAdmin();
+    
+    // If barber admin is set in localStorage, immediately update state
     if (isBarberAdmin) {
       setAuthState(prev => ({
         ...prev,
@@ -38,6 +39,17 @@ export function useAuth() {
         loading: false
       }));
     }
+    
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const adminStatus = isBarberAdmin || isUserAdmin(user);
+      console.log('Auth state changed:', { user: user?.email, isBarberAdmin, isUserAdmin: isUserAdmin(user), adminStatus });
+      
+      setAuthState({
+        user,
+        loading: false,
+        isAdmin: adminStatus
+      });
+    });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();

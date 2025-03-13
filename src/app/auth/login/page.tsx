@@ -52,9 +52,10 @@ export default function LoginPage() {
     try {
       await loginUser(data.email, data.password);
       router.push('/');
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Login error:', error);
-      setError(error.message || 'שגיאה בהתחברות. אנא נסה שנית.');
+      const errorMessage = error instanceof Error ? error.message : 'שגיאה בהתחברות. אנא נסה שנית.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -80,10 +81,22 @@ export default function LoginPage() {
 
   const handleBarberSubmit = () => {
     if (barberPassword === 'admin123') {
-      // Set admin session in localStorage
-      localStorage.setItem('isBarberAdmin', 'true');
-      handleBarberDialogClose();
-      router.push('/admin/dashboard');
+      try {
+        // Set admin session in localStorage
+        localStorage.setItem('isBarberAdmin', 'true');
+        console.log('Barber admin set in localStorage:', localStorage.getItem('isBarberAdmin'));
+        
+        // Close dialog first
+        handleBarberDialogClose();
+        
+        // Short delay to ensure localStorage is set before redirect
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 100);
+      } catch (error) {
+        console.error('Error setting barber admin in localStorage:', error);
+        setBarberError('אירעה שגיאה בהתחברות. אנא נסה שנית.');
+      }
     } else {
       setBarberError('סיסמה שגויה. אנא נסה שנית.');
     }

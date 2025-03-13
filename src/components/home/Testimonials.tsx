@@ -55,7 +55,6 @@ const testimonialsList: TestimonialProps[] = [
 
 function TestimonialCard({ name, rating, comment, avatar, date }: TestimonialProps) {
   const [imageError, setImageError] = useState(false);
-  const theme = useTheme();
   
   return (
     <Paper
@@ -103,7 +102,7 @@ function TestimonialCard({ name, rating, comment, avatar, date }: TestimonialPro
       </Typography>
       <Rating value={rating} readOnly precision={0.5} sx={{ mb: 2 }} />
       <Typography variant="body1" sx={{ mb: 2, fontStyle: 'italic' }}>
-        "{comment}"
+        &ldquo;{comment}&rdquo;
       </Typography>
       <Typography variant="caption" color="text.secondary">
         {date}

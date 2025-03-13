@@ -9,19 +9,33 @@ import {
   Step, 
   StepLabel, 
   Button, 
-  Paper,
-  Grid
+  Paper
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import DateSelection from '@/components/booking/DateSelection';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import ContactInfo from '@/components/booking/ContactInfo';
 import Confirmation from '@/components/booking/Confirmation';
-import { ArrowBack, ArrowForward, Check } from '@mui/icons-material';
+import { ArrowBack, ArrowForward } from '@mui/icons-material';
+
+// Define a type for the booking data
+interface BookingData {
+  date: Date | null;
+  time: string | null;
+  service: string;
+  people: number;
+  withChildren: boolean;
+  childrenCount: number;
+  notificationMethod: string;
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
 
 export default function BookingPage() {
   const [activeStep, setActiveStep] = useState(0);
-  const [bookingData, setBookingData] = useState({
+  const [bookingData, setBookingData] = useState<BookingData>({
     date: null,
     time: null,
     service: '',
@@ -56,7 +70,7 @@ export default function BookingPage() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleDataChange = (data: any) => {
+  const handleDataChange = (data: Partial<BookingData>) => {
     setBookingData((prev) => ({ ...prev, ...data }));
   };
 

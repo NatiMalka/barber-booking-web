@@ -14,9 +14,6 @@ import {
   Alert,
   AlertTitle,
   Button,
-  Stepper,
-  Step,
-  StepLabel,
   CircularProgress
 } from '@mui/material';
 import { 
@@ -38,7 +35,6 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { createAppointment } from '@/firebase/services/appointmentService';
 
 // Define services map for display
@@ -56,15 +52,29 @@ const notificationMethodsMap: Record<string, string> = {
   'email': 'אימייל'
 };
 
+// Define the booking data interface
+interface BookingData {
+  date: Date | null;
+  time: string | null;
+  service: string;
+  people: number;
+  withChildren: boolean;
+  childrenCount: number;
+  notificationMethod: string;
+  name: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+}
+
 interface ConfirmationProps {
-  bookingData: any;
+  bookingData: BookingData;
 }
 
 export default function Confirmation({ bookingData }: ConfirmationProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -72,7 +82,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
     
     try {
       // Create a booking object with all necessary data
-      const bookingDate = new Date(bookingData.date);
+      const bookingDate = new Date(bookingData.date as Date);
       
       // הוספת השעה לאובייקט התאריך
       if (bookingData.time) {
@@ -83,7 +93,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
       // Prepare appointment data for Firebase
       const appointmentData = {
         date: bookingDate,
-        time: bookingData.time,
+        time: bookingData.time || '',
         service: bookingData.service,
         people: bookingData.people,
         withChildren: bookingData.withChildren || false,
@@ -109,9 +119,6 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
     }
   };
 
-  // Define the steps for the booking process
-  const steps = ['אישור הזמנה', 'פרטי התקשרות', 'שירות', 'תאריך'];
-
   if (isSubmitted) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -136,10 +143,10 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
             חשוב לדעת
           </AlertTitle>
           <Box sx={{ textAlign: 'center', fontWeight: 'medium' }}>
-            <Typography variant="body1" paragraph sx={{ fontWeight: 'bold' }}>
+            <Typography variant="body1" paragraph component="div" sx={{ fontWeight: 'bold' }}>
               בקשת התור נשלחה לאישור הספר
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" component="div">
               לאחר אישור הבקשה, תקבל הודעת אישור ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}
             </Typography>
           </Box>
@@ -222,7 +229,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
         icon={<Info />}
       >
         <AlertTitle>שים לב</AlertTitle>
-        <Typography sx={{ fontWeight: 'medium' }}>
+        <Typography component="div" sx={{ fontWeight: 'medium' }}>
           אנא בדוק את פרטי ההזמנה לפני שליחת הבקשה. התור יקבע רק לאחר אישור הספר.
         </Typography>
       </Alert>
@@ -234,7 +241,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
           icon={<ErrorIcon />}
         >
           <AlertTitle>שגיאה</AlertTitle>
-          <Typography>{error}</Typography>
+          <Typography component="div">{error}</Typography>
         </Alert>
       )}
       

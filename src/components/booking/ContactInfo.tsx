@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -11,13 +10,26 @@ import {
 import { Person, Phone, Email, Note } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 
+// Define the contact info data interface
+interface ContactInfoData {
+  name: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
+
 interface ContactInfoProps {
-  bookingData: any;
-  onDataChange: (data: any) => void;
+  bookingData: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    notes?: string;
+  };
+  onDataChange: (data: ContactInfoData) => void;
 }
 
 export default function ContactInfo({ bookingData, onDataChange }: ContactInfoProps) {
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  const { control, handleSubmit, formState: { errors } } = useForm<ContactInfoData>({
     defaultValues: {
       name: bookingData.name || '',
       phone: bookingData.phone || '',
@@ -26,7 +38,7 @@ export default function ContactInfo({ bookingData, onDataChange }: ContactInfoPr
     }
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: ContactInfoData) => {
     onDataChange(data);
   };
 

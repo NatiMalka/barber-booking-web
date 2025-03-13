@@ -1,24 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
   Grid, 
-  Paper, 
   Button,
-  FormControl,
-  FormLabel,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
   CircularProgress,
-  Tooltip
+  Tooltip,
+  Badge
 } from '@mui/material';
-import { format, addDays, isAfter, isBefore, isEqual, parseISO, set, isSameDay } from 'date-fns';
+import { format, addDays, isBefore, isEqual, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { getAppointmentsByDate } from '@/firebase/services/appointmentService';
-import { EventBusy } from '@mui/icons-material';
+import { isVacationDay } from '@/firebase/services/availabilityService';
+import { EventBusy, BeachAccess } from '@mui/icons-material';
 
 // Define available time slots
 const timeSlots = [
@@ -38,9 +34,18 @@ const fridayTimeSlots = [
   '08:00', '08:30', ...timeSlots.slice(0, 12)
 ];
 
+// Define the booking data interface
+interface BookingDateData {
+  date: Date | null;
+  time: string | null;
+}
+
 interface DateSelectionProps {
-  bookingData: any;
-  onDataChange: (data: any) => void;
+  bookingData: {
+    date?: Date | null;
+    time?: string | null;
+  };
+  onDataChange: (data: Partial<BookingDateData>) => void;
 }
 
 export default function DateSelection({ bookingData, onDataChange }: DateSelectionProps) {
@@ -50,6 +55,21 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
   const [selectedTime, setSelectedTime] = useState<string | null>(bookingData.time || null);
   const [bookedTimeSlots, setBookedTimeSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [vacationDays, setVacationDays] = useState<Record<string, { isFullDay: boolean, unavailableHours: string[] }>>({});
+
+  const handleDateSelect = useCallback((date: Date) => {
+    // Check if the date is a full vacation day
+    const vacationInfo = vacationDays[format(date, 'yyyy-MM-dd')];
+    
+    if (vacationInfo && vacationInfo.isFullDay) {
+      // Don't select full vacation days
+      return;
+    }
+    
+    setSelectedDate(date);
+    setSelectedTime(null);
+    onDataChange({ date, time: null });
+  }, [vacationDays, onDataChange]);
 
   // Generate available dates (next 14 days, excluding Saturdays)
   useEffect(() => {
@@ -71,7 +91,36 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     if (!selectedDate && dates.length > 0) {
       handleDateSelect(dates[0]);
     }
-  }, []);
+  }, [selectedDate, handleDateSelect]);
+
+  // Check for vacation days when dates are loaded
+  useEffect(() => {
+    const checkVacationDays = async () => {
+      const vacationInfo: Record<string, { isFullDay: boolean, unavailableHours: string[] }> = {};
+      
+      for (const date of availableDates) {
+        try {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          const result = await isVacationDay(date);
+          
+          if (result.isVacationDay) {
+            vacationInfo[dateStr] = {
+              isFullDay: result.isFullDay,
+              unavailableHours: result.unavailableHours || []
+            };
+          }
+        } catch (error) {
+          console.error(`Error checking vacation day for ${date.toDateString()}:`, error);
+        }
+      }
+      
+      setVacationDays(vacationInfo);
+    };
+    
+    if (availableDates.length > 0) {
+      checkVacationDays();
+    }
+  }, [availableDates]);
 
   // Update available time slots based on selected date
   useEffect(() => {
@@ -117,12 +166,6 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     fetchBookedAppointments();
   }, [selectedDate]);
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedTime(null);
-    onDataChange({ date, time: null });
-  };
-
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     onDataChange({ time });
@@ -130,6 +173,12 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
 
   const isDateSelected = (date: Date) => {
     return selectedDate && isEqual(date, selectedDate);
+  };
+
+  // Check if a date is a vacation day
+  const isDateVacation = (date: Date): boolean => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return dateStr in vacationDays && vacationDays[dateStr].isFullDay;
   };
 
   // Check if a time slot is in the past for the current day
@@ -153,6 +202,22 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     return bookedTimeSlots.includes(timeSlot);
   };
 
+  // Check if a time slot is unavailable due to vacation
+  const isTimeSlotVacation = (timeSlot: string): boolean => {
+    if (!selectedDate) return false;
+    
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const vacationInfo = vacationDays[dateStr];
+    
+    if (!vacationInfo) return false;
+    
+    // If it's a full day vacation, all time slots are unavailable
+    if (vacationInfo.isFullDay) return true;
+    
+    // Check if this specific time slot is unavailable
+    return vacationInfo.unavailableHours.includes(timeSlot);
+  };
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -160,27 +225,54 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
       </Typography>
       
       <Grid container spacing={2} sx={{ mb: 4 }}>
-        {availableDates.map((date) => (
-          <Grid item key={date.toISOString()}>
-            <Button
-              variant={isDateSelected(date) ? "contained" : "outlined"}
-              onClick={() => handleDateSelect(date)}
-              sx={{ 
-                minWidth: '100px',
-                display: 'flex',
-                flexDirection: 'column',
-                p: 1
-              }}
-            >
-              <Typography variant="body2">
-                {format(date, 'EEEE', { locale: he })}
-              </Typography>
-              <Typography variant="body1" fontWeight="bold">
-                {format(date, 'd/MM', { locale: he })}
-              </Typography>
-            </Button>
-          </Grid>
-        ))}
+        {availableDates.map((date) => {
+          const isVacation = isDateVacation(date);
+          
+          return (
+            <Grid item key={date.toISOString()}>
+              <Tooltip 
+                title={isVacation ? "הספר אינו זמין ביום זה" : ""} 
+                arrow
+              >
+                <span>
+                  <Badge
+                    color="error"
+                    badgeContent={isVacation ? <BeachAccess fontSize="small" /> : 0}
+                    overlap="circular"
+                    anchorOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <Button
+                      variant={isDateSelected(date) ? "contained" : "outlined"}
+                      onClick={() => handleDateSelect(date)}
+                      disabled={isVacation}
+                      sx={{ 
+                        minWidth: '100px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        p: 1,
+                        opacity: isVacation ? 0.5 : 1,
+                        bgcolor: isVacation ? 'rgba(211, 47, 47, 0.1)' : undefined,
+                        '&:hover': {
+                          bgcolor: isVacation ? 'rgba(211, 47, 47, 0.2)' : undefined
+                        }
+                      }}
+                    >
+                      <Typography variant="body2">
+                        {format(date, 'EEEE', { locale: he })}
+                      </Typography>
+                      <Typography variant="body1" fontWeight="bold">
+                        {format(date, 'd/MM', { locale: he })}
+                      </Typography>
+                    </Button>
+                  </Badge>
+                </span>
+              </Tooltip>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {selectedDate && (
@@ -198,25 +290,33 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
               {availableTimeSlots.map((time) => {
                 const isPast = isTimeSlotPast(time);
                 const isBooked = isTimeSlotBooked(time);
-                const isDisabled = isPast || isBooked;
+                const isVacation = isTimeSlotVacation(time);
+                const isDisabled = isPast || isBooked || isVacation;
+                
+                let tooltipTitle = "";
+                if (isBooked) tooltipTitle = "תור זה כבר תפוס";
+                else if (isPast) tooltipTitle = "זמן זה כבר עבר";
+                else if (isVacation) tooltipTitle = "הספר אינו זמין בשעה זו";
                 
                 return (
                   <Grid item key={time}>
-                    <Tooltip title={isBooked ? "תור זה כבר תפוס" : isPast ? "זמן זה כבר עבר" : ""} arrow>
+                    <Tooltip title={tooltipTitle} arrow>
                       <span>
                         <Button
                           variant={selectedTime === time ? "contained" : "outlined"}
                           onClick={() => !isDisabled && handleTimeSelect(time)}
                           color="primary"
                           disabled={isDisabled}
-                          startIcon={isBooked ? <EventBusy /> : undefined}
+                          startIcon={isBooked ? <EventBusy /> : isVacation ? <BeachAccess /> : undefined}
                           sx={{ 
                             minWidth: '80px',
                             opacity: isDisabled ? 0.5 : 1,
                             cursor: isDisabled ? 'not-allowed' : 'pointer',
-                            bgcolor: isBooked ? 'rgba(211, 47, 47, 0.1)' : undefined,
+                            bgcolor: isBooked ? 'rgba(211, 47, 47, 0.1)' : 
+                                    isVacation ? 'rgba(255, 152, 0, 0.1)' : undefined,
                             '&:hover': {
-                              bgcolor: isBooked ? 'rgba(211, 47, 47, 0.2)' : undefined
+                              bgcolor: isBooked ? 'rgba(211, 47, 47, 0.2)' : 
+                                      isVacation ? 'rgba(255, 152, 0, 0.2)' : undefined
                             }
                           }}
                         >

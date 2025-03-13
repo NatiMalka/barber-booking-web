@@ -9,8 +9,7 @@ import {
   where, 
   orderBy, 
   Timestamp,
-  getDoc,
-  collectionGroup
+  getDoc
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -308,38 +307,75 @@ export const findAppointmentInAllCollections = async (appointmentId: string) => 
 // פונקציה לקבלת כל התורים מכל הקולקציות
 export const getAllAppointmentsFromAllCollections = async () => {
   try {
-    console.log('מקבל את כל התורים מכל הקולקציות...');
+    console.log('getAllAppointmentsFromAllCollections: מתחיל לקבל את כל התורים מכל הקולקציות');
     
-    const allAppointments: any[] = [];
-    const possibleCollections = ['appointments', 'bookings', 'orders', 'reservations', 'appointment'];
+    // רשימת קולקציות אפשריות
+    const possibleCollections = ['appointments', 'bookings', 'orders', 'reservations'];
     
+    // מערך לאחסון כל התורים
+    const allAppointments: Appointment[] = [];
+    
+    // עבור על כל קולקציה אפשרית
     for (const collectionName of possibleCollections) {
       try {
-        console.log(`בודק בקולקציה: ${collectionName}...`);
-        const q = query(collection(db, collectionName));
-        const querySnapshot = await getDocs(q);
+        console.log(`getAllAppointmentsFromAllCollections: בודק קולקציה: ${collectionName}`);
         
-        if (querySnapshot.docs.length > 0) {
-          console.log(`נמצאו ${querySnapshot.docs.length} תורים בקולקציה ${collectionName}`);
+        const q = query(
+          collection(db, collectionName),
+          orderBy('date', 'asc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        console.log(`getAllAppointmentsFromAllCollections: נמצאו ${querySnapshot.docs.length} מסמכים בקולקציה ${collectionName}`);
+        
+        // הוסף את התורים למערך הכולל
+        querySnapshot.forEach(doc => {
+          const data = doc.data();
           
-          querySnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            allAppointments.push({
-              id: doc.id,
-              ...data,
-              _collection: collectionName
-            });
+          // המר את שדה התאריך ל-Date אם הוא קיים
+          let date: Date;
+          if (data.date) {
+            if (data.date instanceof Timestamp) {
+              date = data.date.toDate();
+            } else if (data.date.seconds) { // אם זה אובייקט Firestore Timestamp
+              date = new Timestamp(data.date.seconds, data.date.nanoseconds).toDate();
+            } else {
+              date = new Date(data.date);
+            }
+          } else {
+            date = new Date();
+          }
+          
+          // הוסף את התור למערך
+          allAppointments.push({
+            id: doc.id,
+            date,
+            time: data.time || '',
+            service: data.service || '',
+            people: data.people || 1,
+            notificationMethod: data.notificationMethod || 'whatsapp',
+            name: data.name || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            notes: data.notes || '',
+            status: (data.status as Appointment['status']) || 'pending',
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
           });
-        }
+        });
       } catch (error) {
-        console.error(`שגיאה בבדיקת קולקציה ${collectionName}:`, error);
+        console.error(`getAllAppointmentsFromAllCollections: שגיאה בקבלת תורים מקולקציה ${collectionName}:`, error);
       }
     }
     
-    console.log(`סה"כ נמצאו ${allAppointments.length} תורים בכל הקולקציות`);
+    console.log(`getAllAppointmentsFromAllCollections: סה"כ נמצאו ${allAppointments.length} תורים מכל הקולקציות`);
+    
+    // מיון התורים לפי תאריך
+    allAppointments.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
     return allAppointments;
   } catch (error) {
-    console.error('Error getting all appointments from all collections:', error);
+    console.error('getAllAppointmentsFromAllCollections: שגיאה בקבלת כל התורים מכל הקולקציות:', error);
     throw error;
   }
 }; 

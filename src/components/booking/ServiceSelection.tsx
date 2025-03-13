@@ -5,9 +5,7 @@ import {
   Box, 
   Typography, 
   Grid, 
-  Paper, 
   FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
@@ -21,7 +19,7 @@ import {
   Collapse,
   Divider
 } from '@mui/material';
-import { ContentCut, Timer, Person, ChildCare } from '@mui/icons-material';
+import { ContentCut, Person, ChildCare } from '@mui/icons-material';
 
 // Define available services
 const services = [
@@ -51,9 +49,24 @@ const services = [
   }
 ];
 
+// Define the service selection data interface
+interface ServiceData {
+  service: string;
+  people: number;
+  withChildren: boolean;
+  childrenCount: number;
+  notificationMethod: string;
+}
+
 interface ServiceSelectionProps {
-  bookingData: any;
-  onDataChange: (data: any) => void;
+  bookingData: {
+    service?: string;
+    people?: number;
+    withChildren?: boolean;
+    childrenCount?: number;
+    notificationMethod?: string;
+  };
+  onDataChange: (data: Partial<ServiceData>) => void;
 }
 
 export default function ServiceSelection({ bookingData, onDataChange }: ServiceSelectionProps) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Container, Typography, Grid, Card, CardContent, useTheme } from '@mui/material';
-import { ContentCut, Brush, Straighten, Style } from '@mui/icons-material';
+import { ContentCut, Straighten, Style } from '@mui/icons-material';
 
 interface ServiceProps {
   title: string;
@@ -37,7 +37,7 @@ const servicesList: ServiceProps[] = [
   },
 ];
 
-function ServiceCard({ title, description, icon, duration }: ServiceProps) {
+function ServiceCard({ title, description, icon }: Omit<ServiceProps, 'duration'>) {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 }}>
       <CardContent>
