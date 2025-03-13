@@ -19,13 +19,25 @@ export function useAuth() {
   });
 
   useEffect(() => {
+    // Check if user is barber admin from localStorage
+    const isBarberAdmin = typeof window !== 'undefined' && localStorage.getItem('isBarberAdmin') === 'true';
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setAuthState({
         user,
         loading: false,
-        isAdmin: isUserAdmin(user)
+        isAdmin: isBarberAdmin || isUserAdmin(user)
       });
     });
+
+    // If there's no auth state change but we have barber admin in localStorage
+    if (isBarberAdmin) {
+      setAuthState(prev => ({
+        ...prev,
+        isAdmin: true,
+        loading: false
+      }));
+    }
 
     // Cleanup subscription on unmount
     return () => unsubscribe();

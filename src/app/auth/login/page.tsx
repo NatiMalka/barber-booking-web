@@ -11,9 +11,14 @@ import {
   Link as MuiLink,
   InputAdornment,
   IconButton,
-  Alert
+  Alert,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
-import { Email, Lock, Visibility, VisibilityOff } from '@mui/icons-material';
+import { Email, Lock, Visibility, VisibilityOff, Person } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { loginUser } from '@/firebase/services/authService';
 import { useRouter } from 'next/navigation';
@@ -28,6 +33,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [openBarberDialog, setOpenBarberDialog] = useState(false);
+  const [barberPassword, setBarberPassword] = useState('');
+  const [barberError, setBarberError] = useState<string | null>(null);
   const router = useRouter();
   
   const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
@@ -43,7 +51,7 @@ export default function LoginPage() {
     
     try {
       await loginUser(data.email, data.password);
-      router.push('/admin/dashboard');
+      router.push('/');
     } catch (error: any) {
       console.error('Login error:', error);
       setError(error.message || 'שגיאה בהתחברות. אנא נסה שנית.');
@@ -54,6 +62,31 @@ export default function LoginPage() {
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleBarberLogin = () => {
+    setOpenBarberDialog(true);
+  };
+
+  const handleBarberDialogClose = () => {
+    setOpenBarberDialog(false);
+    setBarberPassword('');
+    setBarberError(null);
+  };
+
+  const handleBarberPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBarberPassword(e.target.value);
+  };
+
+  const handleBarberSubmit = () => {
+    if (barberPassword === 'admin123') {
+      // Set admin session in localStorage
+      localStorage.setItem('isBarberAdmin', 'true');
+      handleBarberDialogClose();
+      router.push('/admin/dashboard');
+    } else {
+      setBarberError('סיסמה שגויה. אנא נסה שנית.');
+    }
   };
 
   return (
@@ -68,6 +101,26 @@ export default function LoginPage() {
             {error}
           </Alert>
         )}
+        
+        <Box sx={{ mb: 4 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            fullWidth
+            size="large"
+            startIcon={<Person />}
+            onClick={handleBarberLogin}
+            sx={{ py: 1.5, fontSize: '1.1rem' }}
+          >
+            כניסה לספר
+          </Button>
+        </Box>
+        
+        <Divider sx={{ my: 3 }}>
+          <Typography variant="body2" color="text.secondary">
+            או התחבר כלקוח
+          </Typography>
+        </Divider>
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box sx={{ mb: 3 }}>
@@ -156,6 +209,44 @@ export default function LoginPage() {
           </Box>
         </form>
       </Paper>
+
+      {/* Barber Login Dialog */}
+      <Dialog open={openBarberDialog} onClose={handleBarberDialogClose}>
+        <DialogTitle>
+          <Typography variant="h6" align="center">
+            כניסת ספר
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          {barberError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {barberError}
+            </Alert>
+          )}
+          <TextField
+            autoFocus
+            margin="dense"
+            label="סיסמה"
+            type="password"
+            fullWidth
+            value={barberPassword}
+            onChange={handleBarberPasswordChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Lock />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleBarberDialogClose}>ביטול</Button>
+          <Button onClick={handleBarberSubmit} variant="contained" color="primary">
+            כניסה
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 } 

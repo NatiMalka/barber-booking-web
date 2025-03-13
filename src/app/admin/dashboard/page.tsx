@@ -19,7 +19,9 @@ import {
   IconButton,
   Card,
   CardContent,
-  CardActions
+  CardActions,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import { 
   Check, 
@@ -33,6 +35,8 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 // Mock data for appointments
 const mockAppointments = [
@@ -111,6 +115,15 @@ const statusColors: Record<string, string> = {
 export default function AdminDashboard() {
   const [tabValue, setTabValue] = useState(0);
   const [appointments, setAppointments] = useState(mockAppointments);
+  const { isAdmin, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If not loading and not admin, redirect to home
+    if (!loading && !isAdmin) {
+      router.push('/auth/login');
+    }
+  }, [isAdmin, loading, router]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -133,6 +146,26 @@ export default function AdminDashboard() {
     if (tabValue === 1) return appointment.status === 'approved';
     return true;
   });
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // If not admin, don't render anything (redirect happens in useEffect)
+  if (!isAdmin) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 8 }}>
+        <Alert severity="error">
+          אין לך הרשאות לצפות בדף זה. מועבר לדף ההתחברות...
+        </Alert>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -252,19 +285,19 @@ export default function AdminDashboard() {
                   
                   {appointment.status === 'pending' && (
                     <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
-                      <Button 
-                        variant="outlined" 
-                        color="error" 
-                        size="small" 
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
                         startIcon={<Close />}
                         onClick={() => handleReject(appointment.id)}
                       >
                         דחה
                       </Button>
-                      <Button 
-                        variant="contained" 
-                        color="success" 
-                        size="small" 
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
                         startIcon={<Check />}
                         onClick={() => handleApprove(appointment.id)}
                         sx={{ mr: 1 }}

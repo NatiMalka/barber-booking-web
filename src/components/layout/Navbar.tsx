@@ -27,7 +27,7 @@ import {
   Logout 
 } from '@mui/icons-material';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { logoutUser } from '@/firebase/services/authService';
 
@@ -35,7 +35,7 @@ interface NavItem {
   text: string;
   icon: React.ReactNode;
   href?: string;
-  onClick?: () => Promise<void>;
+  onClick?: () => Promise<void> | void;
 }
 
 export default function Navbar() {
@@ -44,6 +44,7 @@ export default function Navbar() {
   const { user, isAdmin } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const router = useRouter();
 
   const toggleDrawer = (open: boolean) => () => {
     setDrawerOpen(open);
@@ -51,8 +52,16 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      // Clear barber admin from localStorage
+      localStorage.removeItem('isBarberAdmin');
+      
+      // If user is logged in with Firebase, log them out
+      if (user) {
+        await logoutUser();
+      }
+      
       setDrawerOpen(false);
+      router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -67,7 +76,7 @@ export default function Navbar() {
     { text: 'לוח בקרה', icon: <Dashboard />, href: '/admin/dashboard' },
   ];
 
-  const authItems: NavItem[] = user 
+  const authItems: NavItem[] = user || isAdmin
     ? [{ text: 'התנתק', icon: <Logout />, onClick: handleLogout }]
     : [{ text: 'התחבר', icon: <Login />, href: '/auth/login' }];
 
