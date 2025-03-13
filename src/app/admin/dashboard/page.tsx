@@ -66,11 +66,13 @@ import {
 import VacationManager from '@/components/admin/VacationManager';
 
 // Define services map for display
-const servicesMap: Record<string, string> = {
-  'haircut': 'תספורת גברים',
-  'kids': 'תספורת ילדים',
-  'beard': 'עיצוב זקן',
-  'combo': 'תספורת + עיצוב זקן'
+const servicesMap: Record<string, { name: string, price: number }> = {
+  'haircut': { name: 'תספורת גבר/ ילד', price: 50 },
+  'beard': { name: 'סידור זקן', price: 25 },
+  'sideBurn': { name: 'סידור קו', price: 20 },
+  'styling': { name: 'איזורי שעווה אף/אוזניים/לחיים/גבות', price: 15 },
+  'coloring': { name: 'גוונים', price: 180 },
+  'fullPackage': { name: 'צבע מלא', price: 220 }
 };
 
 // Define status colors
@@ -89,6 +91,17 @@ const statusLabels: Record<string, string> = {
   'cancelled': 'בוטל'
 };
 
+// Calculate total price for an appointment
+const calculateTotalPrice = (appointment: AppointmentType) => {
+  if (appointment.services && appointment.services.length > 0) {
+    return appointment.services.reduce((total, serviceId) => {
+      return total + (servicesMap[serviceId]?.price || 0);
+    }, 0);
+  }
+  // Fallback for old appointments with only a single service
+  return servicesMap[appointment.service]?.price || 0;
+};
+
 export default function AdminDashboard() {
   const [tabValue, setTabValue] = useState(0);
   const [mainTabValue, setMainTabValue] = useState(0); // New state for main tabs
@@ -101,182 +114,92 @@ export default function AdminDashboard() {
   const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentType | null>(null);
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'upcoming' | 'past'>('all');
-  const { isAdmin, loading: authLoading } = useAuth();
+  
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
   
+  // Fetch appointments on component mount
   useEffect(() => {
-    // Check localStorage directly as a fallback
-    const isBarberAdminInStorage = typeof window !== 'undefined' && localStorage.getItem('isBarberAdmin') === 'true';
-    
-    console.log('Admin dashboard auth check:', { 
-      isAdmin, 
-      authLoading, 
-      isBarberAdminInStorage 
-    });
-    
-    // Only redirect if not admin and not loading and not barber admin in storage
-    if (!isAdmin && !authLoading && !isBarberAdminInStorage) {
-      console.log('Redirecting to login page - not authorized');
+    if (!authLoading && !isAdmin) {
       router.push('/auth/login');
       return;
     }
-  }, [isAdmin, authLoading, router]);
-
-  // Load appointments function - optimized to reduce unnecessary work
-  const loadAppointments = useCallback(async () => {
+    
+    if (!authLoading && isAdmin) {
+      fetchAppointments();
+    }
+  }, [authLoading, isAdmin, router]);
+  
+  // Fetch appointments function
+  const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const allAppointments = await getAllAppointmentsFromAllCollections();
-      setAppointments(allAppointments);
+      const data = await getAllAppointmentsFromAllCollections();
+      setAppointments(data);
     } catch (error) {
-      console.error('Error loading appointments:', error);
+      console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Load data based on the active tab - with proper dependencies
-  useEffect(() => {
-    if (!isAdmin) return;
-    
-    if (mainTabValue === 0) {
-      // Appointments tab
-      loadAppointments();
-    }
-  }, [mainTabValue, isAdmin, loadAppointments]);
-
-  // Handle main tab change - memoized
-  const handleMainTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
-    setMainTabValue(newValue);
-  }, []);
-
-  // Handle refresh - memoized
-  const handleRefresh = useCallback(() => {
-    if (mainTabValue === 0) {
-      loadAppointments();
-    }
-  }, [mainTabValue, loadAppointments]);
-
-  // Handle clear cache - memoized
-  const handleClearCache = useCallback(() => {
-    localStorage.clear();
-    handleRefresh();
-  }, [handleRefresh]);
-
-  // הוספת רענון אוטומטי כל דקה
-  useEffect(() => {
-    // רענון ראשוני בטעינה
-    handleRefresh();
-    
-    // הגדרת רענון אוטומטי כל דקה
-    const intervalId = setInterval(() => {
-      console.log('מרענן נתונים אוטומטית...');
-      handleRefresh();
-    }, 60000); // כל דקה
-    
-    // ניקוי ה-interval בעת עזיבת הדף
-    return () => clearInterval(intervalId);
-  }, [handleRefresh]);
-
-  // Handle tab change - memoized
-  const handleTabChange = useCallback((event: React.SyntheticEvent, newValue: number) => {
+  };
+  
+  // Handle tab change
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-  }, []);
-
+  };
+  
+  // Handle main tab change
+  const handleMainTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setMainTabValue(newValue);
+  };
+  
   // Handle date filter change
-  const handleDateFilterChange = useCallback((filter: 'all' | 'today' | 'upcoming' | 'past') => {
+  const handleDateFilterChange = (filter: 'all' | 'today' | 'upcoming' | 'past') => {
     setDateFilter(filter);
-  }, []);
-
-  // Handle appointment status update
-  const handleStatusUpdate = useCallback(async (appointmentId: string, newStatus: AppointmentType['status']) => {
+  };
+  
+  // Handle refresh button click
+  const handleRefresh = () => {
+    fetchAppointments();
+  };
+  
+  // Handle clear cache button click
+  const handleClearCache = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.reload();
+  };
+  
+  // Handle status update
+  const handleStatusUpdate = async (appointmentId: string, newStatus: AppointmentType['status']) => {
     try {
       setStatusUpdateLoading(appointmentId);
       await updateAppointmentStatus(appointmentId, newStatus);
       
       // Update local state
-      setAppointments(prevAppointments => 
-        prevAppointments.map(appointment => 
+      setAppointments(prev => 
+        prev.map(appointment => 
           appointment.id === appointmentId 
             ? { ...appointment, status: newStatus } 
             : appointment
         )
       );
     } catch (error) {
-      console.error(`Error updating appointment status to ${newStatus}:`, error);
+      console.error('Error updating appointment status:', error);
     } finally {
       setStatusUpdateLoading(null);
-      setActionMenuAnchor(null);
-    }
-  }, []);
-
-  const handleDeleteConfirm = async () => {
-    if (appointmentToDelete) {
-      try {
-        await deleteAppointment(appointmentToDelete);
-        
-        // Update local state
-        const updatedAppointments = appointments.filter(
-          appointment => appointment.id !== appointmentToDelete
-        );
-        
-        setAppointments(updatedAppointments);
-        setDeleteDialogOpen(false);
-        setAppointmentToDelete(null);
-      } catch (error) {
-        console.error('Error deleting appointment:', error);
-      }
     }
   };
-
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setAppointmentToDelete(null);
-  };
-
-  const handleActionMenuOpen = (event: React.MouseEvent<HTMLElement>, appointment: AppointmentType) => {
-    setActionMenuAnchor(event.currentTarget);
-    setSelectedAppointment(appointment);
-  };
-
-  const handleActionMenuClose = () => {
-    setActionMenuAnchor(null);
-  };
-
-  const handleDeleteClick = (appointmentId: string) => {
-    setAppointmentToDelete(appointmentId);
-    setDeleteDialogOpen(true);
-    setActionMenuAnchor(null);
-  };
-
-  const handleWhatsAppClick = (phone: string) => {
-    // Format phone number (remove non-digits and ensure it starts with country code)
-    const formattedPhone = phone.replace(/\D/g, '');
-    const phoneWithCountryCode = formattedPhone.startsWith('972') 
-      ? formattedPhone 
-      : `972${formattedPhone.startsWith('0') ? formattedPhone.substring(1) : formattedPhone}`;
-    
-    // Open WhatsApp with the phone number
-    window.open(`https://wa.me/${phoneWithCountryCode}`, '_blank');
-  };
-
-  const handleCallClick = (phone: string) => {
-    window.open(`tel:${phone}`, '_blank');
-  };
-
-  const handleEmailClick = (email: string) => {
-    window.open(`mailto:${email}`, '_blank');
-  };
-
-  // Filter appointments based on date filter
+  
+  // Get filtered appointments based on tab and search
   const getFilteredAppointments = useCallback(() => {
     return appointments.filter(appointment => {
-      // First apply tab filter
+      // Filter by status based on tab
       if (tabValue === 1 && appointment.status !== 'pending') return false;
       if (tabValue === 2 && appointment.status !== 'approved') return false;
       if (tabValue === 3 && appointment.status !== 'rejected') return false;
       
-      // Then apply date filter
+      // Filter by date
       if (dateFilter !== 'all') {
         const appointmentDate = appointment.date instanceof Date 
           ? appointment.date 
@@ -285,18 +208,27 @@ export default function AdminDashboard() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        if (dateFilter === 'today' && !isToday(appointmentDate)) return false;
-        if (dateFilter === 'upcoming' && !isAfter(appointmentDate, today)) return false;
-        if (dateFilter === 'past' && !isBefore(appointmentDate, today)) return false;
+        if (dateFilter === 'today' && !isToday(appointmentDate)) {
+          return false;
+        }
+        
+        if (dateFilter === 'upcoming' && !isAfter(appointmentDate, today)) {
+          return false;
+        }
+        
+        if (dateFilter === 'past' && !isBefore(appointmentDate, today)) {
+          return false;
+        }
       }
       
-      // Finally apply search filter
+      // Filter by search term
       if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        return (
-          appointment.name?.toLowerCase().includes(term) ||
-          appointment.phone?.toLowerCase().includes(term)
-        );
+        const searchLower = searchTerm.toLowerCase();
+        const nameMatch = appointment.name?.toLowerCase().includes(searchLower);
+        const phoneMatch = appointment.phone?.toLowerCase().includes(searchLower);
+        const emailMatch = appointment.email?.toLowerCase().includes(searchLower);
+        
+        return nameMatch || phoneMatch || emailMatch;
       }
       
       return true;
@@ -446,28 +378,28 @@ export default function AdminDashboard() {
                 <Menu
                   anchorEl={actionMenuAnchor}
                   open={Boolean(actionMenuAnchor) && !selectedAppointment}
-                  onClose={handleActionMenuClose}
+                  onClose={() => setActionMenuAnchor(null)}
                 >
                   <MenuItem 
-                    onClick={() => { handleDateFilterChange('all'); handleActionMenuClose(); }}
+                    onClick={() => { handleDateFilterChange('all'); setActionMenuAnchor(null); }}
                     selected={dateFilter === 'all'}
                   >
                     כל התורים
                   </MenuItem>
                   <MenuItem 
-                    onClick={() => { handleDateFilterChange('today'); handleActionMenuClose(); }}
+                    onClick={() => { handleDateFilterChange('today'); setActionMenuAnchor(null); }}
                     selected={dateFilter === 'today'}
                   >
                     תורים להיום
                   </MenuItem>
                   <MenuItem 
-                    onClick={() => { handleDateFilterChange('upcoming'); handleActionMenuClose(); }}
+                    onClick={() => { handleDateFilterChange('upcoming'); setActionMenuAnchor(null); }}
                     selected={dateFilter === 'upcoming'}
                   >
                     תורים עתידיים
                   </MenuItem>
                   <MenuItem 
-                    onClick={() => { handleDateFilterChange('past'); handleActionMenuClose(); }}
+                    onClick={() => { handleDateFilterChange('past'); setActionMenuAnchor(null); }}
                     selected={dateFilter === 'past'}
                   >
                     תורים שעברו
@@ -578,7 +510,10 @@ export default function AdminDashboard() {
                             )}
                             <Tooltip title="אפשרויות נוספות">
                               <IconButton 
-                                onClick={(e) => handleActionMenuOpen(e, appointment)}
+                                onClick={(e) => {
+                                  setSelectedAppointment(appointment);
+                                  setActionMenuAnchor(e.currentTarget);
+                                }}
                               >
                                 <MoreVert />
                               </IconButton>
@@ -609,12 +544,31 @@ export default function AdminDashboard() {
                                   color={statusColors[appointment.status] as any}
                                   sx={{ mr: 1 }}
                                 />
-                                <Chip 
-                                  label={servicesMap[appointment.service] || appointment.service} 
-                                  size="small" 
-                                  variant="outlined"
-                                  icon={<ContentCut sx={{ fontSize: '0.8rem' }} />}
-                                />
+                                {appointment.services && appointment.services.length > 0 ? (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                    {appointment.services.map(serviceId => (
+                                      <Chip 
+                                        key={serviceId}
+                                        label={servicesMap[serviceId]?.name || serviceId} 
+                                        size="small" 
+                                        variant="outlined"
+                                        icon={<ContentCut sx={{ fontSize: '0.8rem' }} />}
+                                      />
+                                    ))}
+                                    <Chip 
+                                      label={`סה״כ: ₪${calculateTotalPrice(appointment)}`}
+                                      size="small"
+                                      color="primary"
+                                    />
+                                  </Box>
+                                ) : (
+                                  <Chip 
+                                    label={servicesMap[appointment.service]?.name || appointment.service} 
+                                    size="small" 
+                                    variant="outlined"
+                                    icon={<ContentCut sx={{ fontSize: '0.8rem' }} />}
+                                  />
+                                )}
                               </Box>
                             </Box>
                           }
@@ -653,7 +607,7 @@ export default function AdminDashboard() {
                                     <IconButton 
                                       size="small" 
                                       color="primary"
-                                      onClick={() => handleCallClick(appointment.phone)}
+                                      onClick={() => window.open(`tel:${appointment.phone}`)}
                                     >
                                       <PhoneIcon fontSize="small" />
                                     </IconButton>
@@ -662,7 +616,7 @@ export default function AdminDashboard() {
                                     <IconButton 
                                       size="small" 
                                       color="success"
-                                      onClick={() => handleWhatsAppClick(appointment.phone)}
+                                      onClick={() => window.open(`https://wa.me/${appointment.phone.replace(/\D/g, '')}`)}
                                     >
                                       <WhatsApp fontSize="small" />
                                     </IconButton>
@@ -672,7 +626,7 @@ export default function AdminDashboard() {
                                       <IconButton 
                                         size="small" 
                                         color="info"
-                                        onClick={() => handleEmailClick(appointment.email!)}
+                                        onClick={() => window.open(`mailto:${appointment.email}`)}
                                       >
                                         <EmailIcon fontSize="small" />
                                       </IconButton>
@@ -700,87 +654,72 @@ export default function AdminDashboard() {
               </List>
             )}
           </Paper>
-          
-          {/* Action Menu for Appointment */}
-          <Menu
-            anchorEl={actionMenuAnchor}
-            open={Boolean(actionMenuAnchor) && Boolean(selectedAppointment)}
-            onClose={handleActionMenuClose}
-          >
-            {selectedAppointment?.status === 'pending' && (
-              <MenuItem onClick={() => handleStatusUpdate(selectedAppointment.id!, 'approved')}>
-                <CheckCircle color="success" sx={{ mr: 1 }} />
-                אשר תור
-              </MenuItem>
-            )}
-            {selectedAppointment?.status === 'pending' && (
-              <MenuItem onClick={() => handleStatusUpdate(selectedAppointment.id!, 'rejected')}>
-                <Cancel color="error" sx={{ mr: 1 }} />
-                דחה תור
-              </MenuItem>
-            )}
-            {selectedAppointment?.status === 'approved' && (
-              <MenuItem onClick={() => handleStatusUpdate(selectedAppointment.id!, 'cancelled')}>
-                <EventBusy color="warning" sx={{ mr: 1 }} />
-                בטל תור
-              </MenuItem>
-            )}
-            {selectedAppointment?.status === 'rejected' && (
-              <MenuItem onClick={() => handleStatusUpdate(selectedAppointment.id!, 'approved')}>
-                <CheckCircle color="success" sx={{ mr: 1 }} />
-                אשר תור בכל זאת
-              </MenuItem>
-            )}
-            <Divider />
-            <MenuItem onClick={() => handleWhatsAppClick(selectedAppointment?.phone || '')}>
-              <WhatsApp color="success" sx={{ mr: 1 }} />
-              שלח וואטסאפ
-            </MenuItem>
-            <MenuItem onClick={() => handleCallClick(selectedAppointment?.phone || '')}>
-              <PhoneIcon color="primary" sx={{ mr: 1 }} />
-              התקשר ללקוח
-            </MenuItem>
-            {selectedAppointment?.email && (
-              <MenuItem onClick={() => handleEmailClick(selectedAppointment.email || '')}>
-                <EmailIcon color="info" sx={{ mr: 1 }} />
-                שלח אימייל
-              </MenuItem>
-            )}
-            <Divider />
-            <MenuItem onClick={() => handleDeleteClick(selectedAppointment?.id || '')} sx={{ color: 'error.main' }}>
-              <Delete color="error" sx={{ mr: 1 }} />
-              מחק תור
-            </MenuItem>
-          </Menu>
-          
-          {/* Delete Confirmation Dialog */}
-          <Dialog
-            open={deleteDialogOpen}
-            onClose={handleDeleteCancel}
-          >
-            <DialogTitle>מחיקת תור</DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                האם אתה בטוח שברצונך למחוק את התור? פעולה זו אינה ניתנת לביטול.
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDeleteCancel} color="primary">
-                ביטול
-              </Button>
-              <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-                מחק
-              </Button>
-            </DialogActions>
-          </Dialog>
         </>
       )}
       
       {mainTabValue === 1 && (
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 2, mb: 4 }}>
-          <VacationManager onRefresh={handleRefresh} />
-        </Paper>
+        <VacationManager />
       )}
+      
+      {/* Action Menu for Appointment */}
+      <Menu
+        anchorEl={actionMenuAnchor}
+        open={Boolean(actionMenuAnchor) && Boolean(selectedAppointment)}
+        onClose={() => {
+          setActionMenuAnchor(null);
+          setSelectedAppointment(null);
+        }}
+      >
+        <MenuItem 
+          onClick={() => {
+            if (selectedAppointment) {
+              setAppointmentToDelete(selectedAppointment.id!);
+              setDeleteDialogOpen(true);
+            }
+            setActionMenuAnchor(null);
+            setSelectedAppointment(null);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <Delete fontSize="small" sx={{ mr: 1 }} />
+          מחק תור
+        </MenuItem>
+      </Menu>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>מחיקת תור</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            האם אתה בטוח שברצונך למחוק את התור? פעולה זו אינה ניתנת לביטול.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="primary">
+            ביטול
+          </Button>
+          <Button 
+            onClick={async () => {
+              if (appointmentToDelete) {
+                try {
+                  await deleteAppointment(appointmentToDelete);
+                  setAppointments(prev => prev.filter(a => a.id !== appointmentToDelete));
+                  setDeleteDialogOpen(false);
+                  setAppointmentToDelete(null);
+                } catch (error) {
+                  console.error('Error deleting appointment:', error);
+                }
+              }
+            }} 
+            color="error"
+          >
+            מחק
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 } 

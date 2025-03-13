@@ -25,33 +25,51 @@ import { ContentCut, Person, ChildCare } from '@mui/icons-material';
 const services = [
   { 
     id: 'haircut', 
-    name: 'תספורת גברים', 
+    name: 'תספורת גבר/ ילד', 
     duration: 45,
-    icon: <ContentCut />
-  },
-  { 
-    id: 'kids', 
-    name: 'תספורת ילדים', 
-    duration: 30,
+    price: 50,
     icon: <ContentCut />
   },
   { 
     id: 'beard', 
-    name: 'עיצוב זקן', 
+    name: 'סידור זקן', 
     duration: 20,
+    price: 25,
     icon: <ContentCut />
   },
   { 
-    id: 'combo', 
-    name: 'תספורת + עיצוב זקן', 
+    id: 'sideBurn', 
+    name: 'סידור קו', 
+    duration: 20,
+    price: 20,
+    icon: <ContentCut />
+  },
+  { 
+    id: 'styling', 
+    name: 'איזורי שעווה אף/אוזניים/לחיים/גבות', 
+    duration: 30,
+    price: 15,
+    icon: <ContentCut />
+  },
+  { 
+    id: 'coloring', 
+    name: 'גוונים', 
     duration: 60,
+    price: 180,
+    icon: <ContentCut />
+  },
+  { 
+    id: 'fullPackage', 
+    name: 'צבע מלא', 
+    duration: 90,
+    price: 220,
     icon: <ContentCut />
   }
 ];
 
 // Define the service selection data interface
 interface ServiceData {
-  service: string;
+  services: string[];
   people: number;
   withChildren: boolean;
   childrenCount: number;
@@ -60,7 +78,7 @@ interface ServiceData {
 
 interface ServiceSelectionProps {
   bookingData: {
-    service?: string;
+    services?: string[];
     people?: number;
     withChildren?: boolean;
     childrenCount?: number;
@@ -70,15 +88,33 @@ interface ServiceSelectionProps {
 }
 
 export default function ServiceSelection({ bookingData, onDataChange }: ServiceSelectionProps) {
-  const [selectedService, setSelectedService] = useState<string>(bookingData.service || '');
+  const [selectedServices, setSelectedServices] = useState<string[]>(bookingData.services || []);
   const [people, setPeople] = useState<number>(bookingData.people || 1);
   const [notificationMethod, setNotificationMethod] = useState<string>(bookingData.notificationMethod || 'whatsapp');
   const [withChildren, setWithChildren] = useState<boolean>(bookingData.withChildren || false);
   const [childrenCount, setChildrenCount] = useState<number>(bookingData.childrenCount || 0);
 
+  // Calculate total price based on selected services
+  const totalPrice = selectedServices.reduce((total, serviceId) => {
+    const service = services.find(s => s.id === serviceId);
+    return total + (service?.price || 0);
+  }, 0);
+
   const handleServiceSelect = (serviceId: string) => {
-    setSelectedService(serviceId);
-    onDataChange({ service: serviceId });
+    setSelectedServices(prev => {
+      // If service is already selected, remove it
+      if (prev.includes(serviceId)) {
+        const newServices = prev.filter(id => id !== serviceId);
+        onDataChange({ services: newServices });
+        return newServices;
+      } 
+      // Otherwise add it
+      else {
+        const newServices = [...prev, serviceId];
+        onDataChange({ services: newServices });
+        return newServices;
+      }
+    });
   };
 
   const handlePeopleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,16 +153,19 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        בחר שירות
+        בחר שירות/ים
+      </Typography>
+      <Typography variant="body2" color="text.secondary" gutterBottom>
+        ניתן לבחור מספר שירותים
       </Typography>
       
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {services.map((service) => (
           <Grid item xs={12} sm={6} key={service.id}>
             <Card 
-              elevation={selectedService === service.id ? 3 : 1}
+              elevation={selectedServices.includes(service.id) ? 3 : 1}
               sx={{ 
-                borderColor: selectedService === service.id ? 'primary.main' : 'transparent',
+                borderColor: selectedServices.includes(service.id) ? 'primary.main' : 'transparent',
                 borderWidth: 2,
                 borderStyle: 'solid',
                 transition: 'all 0.3s ease'
@@ -142,12 +181,31 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
                       {service.name}
                     </Typography>
                   </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {service.duration} דקות
+                    </Typography>
+                    <Typography variant="h6" color="primary.main">
+                      ₪{service.price}
+                    </Typography>
+                  </Box>
                 </CardContent>
               </CardActionArea>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {selectedServices.length > 0 && (
+        <Box sx={{ mt: 2, mb: 4, p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
+          <Typography variant="h6" gutterBottom>
+            סה"כ: ₪{totalPrice}
+          </Typography>
+          <Typography variant="body2">
+            שירותים שנבחרו: {selectedServices.length}
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" gutterBottom>

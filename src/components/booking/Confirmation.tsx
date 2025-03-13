@@ -38,11 +38,13 @@ import Link from 'next/link';
 import { createAppointment } from '@/firebase/services/appointmentService';
 
 // Define services map for display
-const servicesMap: Record<string, string> = {
-  'haircut': 'תספורת גברים',
-  'kids': 'תספורת ילדים',
-  'beard': 'עיצוב זקן',
-  'combo': 'תספורת + עיצוב זקן'
+const servicesMap: Record<string, { name: string, price: number }> = {
+  'haircut': { name: 'תספורת גבר/ ילד', price: 50 },
+  'beard': { name: 'סידור זקן', price: 25 },
+  'sideBurn': { name: 'סידור קו', price: 20 },
+  'styling': { name: 'איזורי שעווה אף/אוזניים/לחיים/גבות', price: 15 },
+  'coloring': { name: 'גוונים', price: 180 },
+  'fullPackage': { name: 'צבע מלא', price: 220 }
 };
 
 // Define notification methods map for display
@@ -56,7 +58,7 @@ const notificationMethodsMap: Record<string, string> = {
 interface BookingData {
   date: Date | null;
   time: string | null;
-  service: string;
+  services: string[];
   people: number;
   withChildren: boolean;
   childrenCount: number;
@@ -94,7 +96,8 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
       const appointmentData = {
         date: bookingDate,
         time: bookingData.time || '',
-        service: bookingData.service,
+        service: bookingData.services[0] || '', // For backward compatibility
+        services: bookingData.services,
         people: bookingData.people,
         withChildren: bookingData.withChildren || false,
         childrenCount: bookingData.childrenCount || 0,
@@ -117,6 +120,13 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Calculate total price
+  const calculateTotalPrice = () => {
+    return bookingData.services.reduce((total, serviceId) => {
+      return total + (servicesMap[serviceId]?.price || 0);
+    }, 0);
   };
 
   if (isSubmitted) {
@@ -157,12 +167,25 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
             סיכום הבקשה
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <Typography variant="body2" color="text.secondary">
-                שירות:
+                שירותים:
               </Typography>
-              <Typography variant="body1" fontWeight="medium">
-                {servicesMap[bookingData.service] || 'לא נבחר'}
+              <List dense>
+                {bookingData.services.map((serviceId) => (
+                  <ListItem key={serviceId} sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: '30px' }}>
+                      <ContentCut fontSize="small" color="primary" />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
+                      secondary={`₪${servicesMap[serviceId]?.price || 0}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+              <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
+                סה"כ: ₪{calculateTotalPrice()}
               </Typography>
             </Grid>
             <Grid item xs={6}>
@@ -257,7 +280,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
             </ListItemIcon>
             <ListItemText 
               primary="תאריך" 
-              secondary={bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : 'לא נבחר'}
+              secondary={bookingData.date ? format(bookingData.date, 'EEEE, d בMMMM yyyy', { locale: he }) : ''} 
             />
           </ListItem>
           
@@ -267,19 +290,36 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
             </ListItemIcon>
             <ListItemText 
               primary="שעה" 
-              secondary={bookingData.time || 'לא נבחרה'}
+              secondary={bookingData.time} 
             />
           </ListItem>
-          
-          <Divider sx={{ my: 1 }} />
           
           <ListItem>
             <ListItemIcon>
               <ContentCut color="primary" />
             </ListItemIcon>
             <ListItemText 
-              primary="שירות" 
-              secondary={servicesMap[bookingData.service] || 'לא נבחר'}
+              primary="שירותים" 
+              secondary={
+                <List dense>
+                  {bookingData.services.map((serviceId) => (
+                    <ListItem key={serviceId} sx={{ py: 0.5 }}>
+                      <ListItemText 
+                        primary={servicesMap[serviceId]?.name || 'שירות לא ידוע'} 
+                        secondary={`₪${servicesMap[serviceId]?.price || 0}`}
+                      />
+                    </ListItem>
+                  ))}
+                  <ListItem sx={{ py: 0.5 }}>
+                    <ListItemText 
+                      primary="סה״כ" 
+                      primaryTypographyProps={{ fontWeight: 'bold' }}
+                      secondary={`₪${calculateTotalPrice()}`}
+                      secondaryTypographyProps={{ fontWeight: 'bold' }}
+                    />
+                  </ListItem>
+                </List>
+              }
             />
           </ListItem>
           

@@ -19,8 +19,11 @@ export interface Appointment {
   id?: string;
   date: Date;
   time: string;
-  service: string;
+  service: string; // Keep for backward compatibility
+  services?: string[]; // New field for multiple services
   people: number;
+  withChildren?: boolean;
+  childrenCount?: number;
   notificationMethod: string;
   name: string;
   phone: string;

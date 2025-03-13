@@ -22,7 +22,8 @@ import { ArrowBack, ArrowForward } from '@mui/icons-material';
 interface BookingData {
   date: Date | null;
   time: string | null;
-  service: string;
+  services: string[];
+  service?: string; // Keep for backward compatibility
   people: number;
   withChildren: boolean;
   childrenCount: number;
@@ -38,7 +39,7 @@ export default function BookingPage() {
   const [bookingData, setBookingData] = useState<BookingData>({
     date: null,
     time: null,
-    service: '',
+    services: [],
     people: 1,
     withChildren: false,
     childrenCount: 0,
@@ -95,7 +96,7 @@ export default function BookingPage() {
       case 0:
         return bookingData.date && bookingData.time;
       case 1:
-        return bookingData.service;
+        return bookingData.services && bookingData.services.length > 0;
       case 2:
         return bookingData.name && bookingData.phone;
       default:
