@@ -2,11 +2,15 @@
   "name": "barbar-booking-web",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://natimalka.github.io/barber-booking-web",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "predeploy": "npm run build && copy public\\.nojekyll out\\",
+    "deploy": "gh-pages -d out",
+    "firebase-deploy": "npm run build && firebase deploy"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -41,6 +45,7 @@
     "@types/stylis": "^4.2.7",
     "eslint": "^9",
     "eslint-config-next": "15.2.2",
+    "gh-pages": "^6.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
