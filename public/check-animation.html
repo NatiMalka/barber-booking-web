@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animation File Check</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .loading {
+      background-color: #cce5ff;
+      color: #004085;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      max-height: 400px;
+      font-size: 12px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #0069d9;
+    }
+    .actions {
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Animation File Check</h1>
+  
+  <div class="actions">
+    <button id="checkBtn">Check Animation File</button>
+    <button id="clearBtn">Clear Results</button>
+  </div>
+  
+  <div id="status" class="status loading">Waiting for check...</div>
+  
+  <h2>Animation File Content:</h2>
+  <pre id="content">Click "Check Animation File" to load the content</pre>
+  
+  <h2>Response Headers:</h2>
+  <pre id="headers">Click "Check Animation File" to see headers</pre>
+  
+  <script>
+    const statusEl = document.getElementById('status');
+    const contentEl = document.getElementById('content');
+    const headersEl = document.getElementById('headers');
+    const checkBtn = document.getElementById('checkBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    checkBtn.addEventListener('click', checkAnimationFile);
+    clearBtn.addEventListener('click', clearResults);
+    
+    function checkAnimationFile() {
+      const animationUrl = '/animations/animation.json';
+      
+      statusEl.className = 'status loading';
+      statusEl.textContent = 'Loading animation file...';
+      contentEl.textContent = 'Loading...';
+      headersEl.textContent = 'Loading...';
+      
+      fetch(animationUrl)
+        .then(response => {
+          // Display headers
+          const headerText = Array.from(response.headers.entries())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('\n');
+          
+          headersEl.textContent = headerText;
+          
+          if (!response.ok) {
+            throw new Error(`Failed to load animation: ${response.status} ${response.statusText}`);
+          }
+          
+          return response.json();
+        })
+        .then(data => {
+          statusEl.className = 'status success';
+          statusEl.textContent = 'Animation file loaded successfully!';
+          contentEl.textContent = JSON.stringify(data, null, 2).substring(0, 2000) + '... (truncated)';
+          
+          // Add file info
+          const fileInfo = document.createElement('div');
+          fileInfo.innerHTML = `
+            <h2>File Information:</h2>
+            <ul>
+              <li>Animation Version: ${data.v}</li>
+              <li>Frame Rate: ${data.fr}</li>
+              <li>Width: ${data.w}</li>
+              <li>Height: ${data.h}</li>
+              <li>Total Frames: ${data.op - data.ip}</li>
+              <li>Name: ${data.nm}</li>
+            </ul>
+          `;
+          
+          document.body.appendChild(fileInfo);
+        })
+        .catch(error => {
+          statusEl.className = 'status error';
+          statusEl.textContent = `Error: ${error.message}`;
+          contentEl.textContent = 'Failed to load animation file';
+        });
+    }
+    
+    function clearResults() {
+      statusEl.className = 'status loading';
+      statusEl.textContent = 'Waiting for check...';
+      contentEl.textContent = 'Click "Check Animation File" to load the content';
+      headersEl.textContent = 'Click "Check Animation File" to see headers';
+      
+      // Remove file info if it exists
+      const fileInfo = document.querySelector('div:last-child');
+      if (fileInfo && fileInfo.querySelector('h2')?.textContent === 'File Information:') {
+        fileInfo.remove();
+      }
+    }
+  </script>
+</body>
+</html> 

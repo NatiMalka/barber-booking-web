@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Animation Test</title>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    .animation-container {
+      margin: 20px auto;
+      max-width: 300px;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e8f4fd;
+      border-radius: 5px;
+      font-size: 14px;
+      text-align: left;
+    }
+    .info h3 {
+      margin-top: 0;
+    }
+    .info ul {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Animation Test Page</h1>
+    
+    <div class="animation-container">
+      <!-- Using the Lottie Player Web Component -->
+      <lottie-player
+        src="/animations/animation.json"
+        background="transparent"
+        speed="1"
+        style="width: 100%; height: 300px;"
+        loop
+        autoplay>
+      </lottie-player>
+    </div>
+    
+    <div class="info">
+      <h3>Animation Information:</h3>
+      <ul>
+        <li>Animation URL: <a href="/animations/animation.json" target="_blank">/animations/animation.json</a></li>
+        <li>Using LottieFiles Player: <a href="https://lottiefiles.com/web-player" target="_blank">LottieFiles Web Player</a></li>
+        <li>Current Time: <span id="current-time"></span></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Display current time to verify the page is loading fresh
+    document.getElementById('current-time').textContent = new Date().toLocaleString();
+  </script>
+</body>
+</html> 

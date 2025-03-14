@@ -36,8 +36,11 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import Link from 'next/link';
-import Lottie from 'lottie-react';
+import dynamic from 'next/dynamic';
 import { createAppointment } from '@/firebase/services/appointmentService';
+
+// Dynamically import Lottie with no SSR
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 // Define services map for display
 const servicesMap: Record<string, { name: string, price: number }> = {
@@ -82,23 +85,50 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
   const [showAnimation, setShowAnimation] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [animationData, setAnimationData] = useState<any>(null);
+  const [animationError, setAnimationError] = useState<string | null>(null);
+  const [animationLoading, setAnimationLoading] = useState<boolean>(true);
 
   // Load the animation data when component mounts
   useEffect(() => {
-    fetch('/animations/animation.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to load animation: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('Animation loaded successfully');
-        setAnimationData(data);
-      })
-      .catch(error => {
-        console.error('Error loading animation:', error);
-      });
+    if (typeof window !== 'undefined') {
+      console.log('Attempting to load animation from /animations/animation.json');
+      setAnimationLoading(true);
+      
+      fetch('/animations/animation.json')
+        .then(response => {
+          console.log('Animation fetch response:', response.status, response.statusText);
+          if (!response.ok) {
+            throw new Error(`Failed to load animation: ${response.status} ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Animation loaded successfully, data size:', JSON.stringify(data).length);
+          setAnimationData(data);
+          setAnimationError(null);
+          setAnimationLoading(false);
+        })
+        .catch(error => {
+          console.error('Error loading animation:', error);
+          setAnimationError(error.message);
+          setAnimationLoading(false);
+        });
+        
+      // Show animation after a short delay
+      const timer = setTimeout(() => {
+        setShowAnimation(true);
+      }, 500);
+      
+      // Show summary after animation has had time to display
+      const summaryTimer = setTimeout(() => {
+        setShowSummary(true);
+      }, 2000);
+      
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(summaryTimer);
+      };
+    }
   }, []);
 
   const handleSubmit = async () => {
@@ -163,14 +193,31 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
       <Box sx={{ textAlign: 'center', py: 4 }}>
         {showAnimation && (
           <Box sx={{ maxWidth: '250px', mx: 'auto', mb: 4 }}>
-            {animationData ? (
+            {animationLoading && (
+              <CircularProgress size={60} />
+            )}
+            
+            {animationError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <AlertTitle>Animation Error</AlertTitle>
+                {animationError}
+              </Alert>
+            )}
+            
+            {animationData && (
               <Lottie 
-                animationData={animationData} 
+                animationData={animationData}
                 loop={true}
                 style={{ width: '100%', height: '100%' }}
+                rendererSettings={{
+                  preserveAspectRatio: 'xMidYMid slice',
+                  progressiveLoad: false,
+                }}
               />
-            ) : (
-              // Fallback animation if Lottie fails to load
+            )}
+            
+            {/* Fallback animation if Lottie fails to load */}
+            {animationError && (
               <Box 
                 sx={{ 
                   width: '200px', 

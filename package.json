@@ -4,10 +4,11 @@
   "private": true,
   "homepage": "https://natimalka.github.io/barber-booking-web",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "dev": "next dev",
+    "build": "next build && npm run copy-animations",
     "start": "next start",
     "lint": "next lint",
+    "copy-animations": "powershell -Command \"if (!(Test-Path out\\animations)) { New-Item -ItemType Directory -Path out\\animations -Force }; Copy-Item -Path public\\animations\\animation.json -Destination out\\animations\\animation.json -Force\"",
     "predeploy": "npm run build && copy public\\.nojekyll out\\",
     "deploy": "gh-pages -d out",
     "firebase-deploy": "npm run build && firebase deploy"
@@ -21,7 +22,6 @@
     "@mui/x-date-pickers": "^6.18.6",
     "@types/react-datepicker": "^6.2.0",
     "@types/react-slick": "^0.23.13",
-    "axios": "^1.8.3",
     "date-fns": "^2.30.0",
     "firebase": "^11.4.0",
     "i18next": "^24.2.2",
@@ -48,6 +48,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.2",
     "gh-pages": "^6.3.0",
+    "json-loader": "^0.5.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

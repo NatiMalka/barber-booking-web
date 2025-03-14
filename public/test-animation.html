@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
+        }
+        #animation-container {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Animation Test</h1>
+        <div id="animation-container"></div>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusEl = document.getElementById('status');
+            
+            // Log the start of the animation loading
+            console.log('Starting to load animation');
+            statusEl.textContent = 'Loading animation...';
+            
+            // Try to load the animation
+            fetch('/animations/animation.json')
+                .then(response => {
+                    console.log('Animation fetch response:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`Failed to load animation: ${response.status} ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Animation loaded successfully, data size:', JSON.stringify(data).length);
+                    statusEl.textContent = 'Animation loaded successfully!';
+                    statusEl.className = 'status success';
+                    
+                    // Initialize Lottie animation
+                    const animationContainer = document.getElementById('animation-container');
+                    const anim = lottie.loadAnimation({
+                        container: animationContainer,
+                        renderer: 'svg',
+                        loop: true,
+                        autoplay: true,
+                        animationData: data
+                    });
+                    
+                    anim.addEventListener('DOMLoaded', function() {
+                        console.log('Lottie DOM loaded');
+                    });
+                    
+                    anim.addEventListener('data_ready', function() {
+                        console.log('Lottie data ready');
+                    });
+                    
+                    anim.addEventListener('data_failed', function() {
+                        console.error('Lottie data failed to load');
+                        statusEl.textContent = 'Animation data failed to load';
+                        statusEl.className = 'status error';
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading animation:', error);
+                    statusEl.textContent = 'Error: ' + error.message;
+                    statusEl.className = 'status error';
+                });
+        });
+    </script>
+</body>
+</html> 
