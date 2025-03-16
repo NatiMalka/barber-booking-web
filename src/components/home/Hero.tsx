@@ -10,8 +10,7 @@ export default function Hero() {
   const router = useRouter();
 
   const handleBookingClick = () => {
-    // Force a hard navigation to clear cache
-    window.location.href = '/client/booking';
+    router.push('/client/booking');
   };
 
   return (
@@ -41,7 +40,8 @@ export default function Hero() {
           הזמנת תורים מהירה וקלה
         </Typography>
         <Button
-          onClick={handleBookingClick}
+          component={Link}
+          href="/client/booking"
           variant="contained"
           size="large"
           color="secondary"
