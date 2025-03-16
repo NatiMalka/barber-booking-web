@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Container, 
@@ -59,11 +59,44 @@ export default function BookingPage() {
     t('booking.confirmation')
   ];
 
+  useEffect(() => {
+    const scrollToTop = () => {
+      // For iOS Safari and other mobile browsers
+      if (typeof window !== 'undefined') {
+        // First try scrolling the document
+        window.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'instant'
+        });
+
+        // Then try scrolling the body and html elements
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // For iOS Safari specifically
+        requestAnimationFrame(() => {
+          window.scrollTo(0, 0);
+        });
+      }
+    };
+
+    // Call scroll on mount and step change
+    scrollToTop();
+  }, [activeStep]); // Add activeStep as dependency to scroll on step changes
+
   const handleNext = () => {
-    // If we're on the last step, don't proceed further
-    if (activeStep === steps.length - 1) {
-      return;
+    if (activeStep === steps.length - 1) return;
+    
+    // Scroll to top before changing step
+    if (typeof window !== 'undefined') {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
     }
+    
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -105,8 +138,29 @@ export default function BookingPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+    <Container 
+      maxWidth="md" 
+      sx={{ 
+        py: { xs: 2, sm: 4 },
+        mt: 0,
+        minHeight: '100vh',
+        // Force GPU acceleration on mobile
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)',
+        // Prevent elastic scrolling on iOS
+        WebkitOverflowScrolling: 'touch'
+      }}
+    >
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          p: 4, 
+          borderRadius: 2,
+          // Force new stacking context
+          position: 'relative',
+          zIndex: 1
+        }}
+      >
         <Typography variant="h4" component="h1" gutterBottom textAlign="center" color="primary" fontWeight="bold">
           {t('booking.title')}
         </Typography>
@@ -119,7 +173,15 @@ export default function BookingPage() {
           ))}
         </Stepper>
         
-        <Box sx={{ mt: 4, mb: 4 }}>
+        <Box 
+          sx={{ 
+            mt: 4, 
+            mb: 4,
+            // Force GPU acceleration
+            transform: 'translateZ(0)',
+            WebkitTransform: 'translateZ(0)'
+          }}
+        >
           {getStepContent(activeStep)}
         </Box>
         

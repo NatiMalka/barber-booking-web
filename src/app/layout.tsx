@@ -5,6 +5,7 @@ import ThemeRegistry from '@/utils/ThemeRegistry';
 import I18nProvider from '@/locales/i18nProvider';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import ScrollToTop from '@/components/utils/ScrollToTop';
 import { Box } from '@mui/material';
 
 const rubik = Rubik({ subsets: ['hebrew', 'latin'] });
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className={`${rubik.className} ${heebo.className}`}>
         <ThemeRegistry>
           <I18nProvider>
+            <ScrollToTop />
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
               <Navbar />
               <Box component="main" sx={{ flexGrow: 1 }}>
