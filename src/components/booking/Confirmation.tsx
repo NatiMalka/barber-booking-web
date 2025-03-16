@@ -192,7 +192,13 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
         {showAnimation && (
-          <Box sx={{ maxWidth: '250px', mx: 'auto', mb: 4 }}>
+          <Box className="animation-container" sx={{ 
+            maxWidth: '250px', 
+            mx: 'auto', 
+            mb: 4,
+            position: 'relative',
+            zIndex: 1
+          }}>
             {animationLoading && (
               <CircularProgress size={60} />
             )}
@@ -208,10 +214,15 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
               <Lottie 
                 animationData={animationData}
                 loop={true}
-                style={{ width: '100%', height: '100%' }}
+                style={{ 
+                  width: '100%', 
+                  height: '100%',
+                  position: 'relative',
+                  zIndex: 1
+                }}
                 rendererSettings={{
                   preserveAspectRatio: 'xMidYMid slice',
-                  progressiveLoad: false,
+                  progressiveLoad: false
                 }}
               />
             )}
