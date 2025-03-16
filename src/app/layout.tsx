@@ -14,6 +14,11 @@ const heebo = Heebo({ subsets: ['hebrew', 'latin'] });
 export const metadata: Metadata = {
   title: 'מספרת בר ארזי - הזמנת תורים',
   description: 'מערכת הזמנת תורים למספרת בר ארזי',
+  other: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
 };
 
 export default function RootLayout({
@@ -23,6 +28,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
+      <head>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+      </head>
       <body className={`${rubik.className} ${heebo.className}`}>
         <ThemeRegistry>
           <I18nProvider>

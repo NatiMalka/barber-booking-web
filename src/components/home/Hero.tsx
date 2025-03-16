@@ -3,9 +3,16 @@
 import { Box, Button, Container, Typography, useTheme } from '@mui/material';
 import { CalendarMonth } from '@mui/icons-material';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Hero() {
   const theme = useTheme();
+  const router = useRouter();
+
+  const handleBookingClick = () => {
+    // Force a hard navigation to clear cache
+    window.location.href = '/client/booking';
+  };
 
   return (
     <Box
@@ -34,8 +41,7 @@ export default function Hero() {
           הזמנת תורים מהירה וקלה
         </Typography>
         <Button
-          component={Link}
-          href="/client/booking"
+          onClick={handleBookingClick}
           variant="contained"
           size="large"
           color="secondary"

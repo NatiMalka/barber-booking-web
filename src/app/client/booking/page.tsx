@@ -60,30 +60,43 @@ export default function BookingPage() {
   ];
 
   useEffect(() => {
-    const scrollToTop = () => {
-      // For iOS Safari and other mobile browsers
-      if (typeof window !== 'undefined') {
-        // First try scrolling the document
+    // Clear any cached data when component mounts
+    if (typeof window !== 'undefined') {
+      // Force a fresh load of the page
+      const clearCache = async () => {
+        if ('caches' in window) {
+          try {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+              cacheNames.map(cacheName => caches.delete(cacheName))
+            );
+          } catch (err) {
+            console.error('Error clearing cache:', err);
+          }
+        }
+      };
+      
+      clearCache();
+      
+      // Scroll to top
+      const scrollToTop = () => {
         window.scrollTo({
           top: 0,
           left: 0,
           behavior: 'instant'
         });
 
-        // Then try scrolling the body and html elements
         document.body.scrollTop = 0;
         document.documentElement.scrollTop = 0;
 
-        // For iOS Safari specifically
         requestAnimationFrame(() => {
           window.scrollTo(0, 0);
         });
-      }
-    };
+      };
 
-    // Call scroll on mount and step change
-    scrollToTop();
-  }, [activeStep]); // Add activeStep as dependency to scroll on step changes
+      scrollToTop();
+    }
+  }, []); // Only run once when component mounts
 
   const handleNext = () => {
     if (activeStep === steps.length - 1) return;

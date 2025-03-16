@@ -57,6 +57,11 @@ export default function Contact() {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
+  const handleBookingClick = () => {
+    // Force a hard navigation to clear cache
+    window.location.href = '/client/booking';
+  };
+
   return (
     <Box
       component="section"
@@ -181,8 +186,7 @@ export default function Contact() {
               
               <Grid item xs={12}>
                 <Button
-                  component={Link}
-                  href="/client/booking"
+                  onClick={handleBookingClick}
                   variant="contained"
                   color="secondary"
                   size="large"
