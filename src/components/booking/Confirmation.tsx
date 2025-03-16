@@ -31,7 +31,8 @@ import {
   ChildCare,
   HourglassTop,
   Info,
-  Error as ErrorIcon
+  Error as ErrorIcon,
+  PaidOutlined
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -405,9 +406,26 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
                       </ListItem>
                     ))}
                   </List>
-                  <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
-                    סה"כ: ₪{calculateTotalPrice()}
-                  </Typography>
+                  <Box 
+                    sx={{ 
+                      mt: 2,
+                      p: 2,
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      borderRadius: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <PaidOutlined sx={{ mr: 1 }} />
+                      סה"כ לתשלום:
+                    </Typography>
+                    <Typography variant="h5" component="div" fontWeight="bold">
+                      ₪{calculateTotalPrice()}
+                    </Typography>
+                  </Box>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">
@@ -521,9 +539,27 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
                 </ListItem>
               ))}
             </List>
-            <Typography variant="body1" fontWeight="bold" sx={{ mt: 1 }}>
-              סה"כ: ₪{calculateTotalPrice()}
-            </Typography>
+            
+            <Box 
+              sx={{ 
+                mt: 2,
+                p: 2,
+                bgcolor: 'primary.main',
+                color: 'white',
+                borderRadius: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+                <PaidOutlined sx={{ mr: 1 }} />
+                סה"כ לתשלום:
+              </Typography>
+              <Typography variant="h5" component="div" fontWeight="bold">
+                ₪{calculateTotalPrice()}
+              </Typography>
+            </Box>
           </Grid>
           
           <Grid item xs={12}>

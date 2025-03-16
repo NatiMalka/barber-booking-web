@@ -19,7 +19,13 @@ import {
   Collapse,
   Divider
 } from '@mui/material';
-import { ContentCut, Person, ChildCare } from '@mui/icons-material';
+import { 
+  ContentCut, 
+  Person, 
+  ChildCare, 
+  PaidOutlined,
+  ShoppingCart
+} from '@mui/icons-material';
 
 // Define available services
 const services = [
@@ -197,13 +203,55 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
       </Grid>
 
       {selectedServices.length > 0 && (
-        <Box sx={{ mt: 2, mb: 4, p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
-          <Typography variant="h6" gutterBottom>
-            סה"כ: ₪{totalPrice}
-          </Typography>
-          <Typography variant="body2">
-            שירותים שנבחרו: {selectedServices.length}
-          </Typography>
+        <Box 
+          sx={{ 
+            mt: 3,
+            mb: 4,
+            p: 3,
+            bgcolor: 'primary.main',
+            color: 'white',
+            borderRadius: 2,
+            boxShadow: 2
+          }}
+        >
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 2
+          }}>
+            <Typography 
+              variant="h6" 
+              component="div" 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <PaidOutlined />
+              סה"כ לתשלום
+            </Typography>
+            <Typography variant="h4" component="div" fontWeight="bold">
+              ₪{totalPrice}
+            </Typography>
+          </Box>
+          
+          <Divider sx={{ 
+            my: 2, 
+            borderColor: 'rgba(255, 255, 255, 0.2)'
+          }} />
+          
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: 1
+          }}>
+            <ShoppingCart fontSize="small" />
+            <Typography variant="body1">
+              {selectedServices.length} שירותים נבחרו
+            </Typography>
+          </Box>
         </Box>
       )}
 
