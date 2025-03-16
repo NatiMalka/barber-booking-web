@@ -5,13 +5,12 @@
   "homepage": "https://natimalka.github.io/barber-booking-web",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run copy-animations",
+    "clean": "powershell -Command \"if (Test-Path out) { Remove-Item -Recurse -Force out }\"",
+    "build": "npm run clean && next build && npm run copy-animations",
     "start": "next start",
     "lint": "next lint",
     "copy-animations": "powershell -Command \"if (!(Test-Path out\\animations)) { New-Item -ItemType Directory -Path out\\animations -Force }; Copy-Item -Path public\\animations\\animation.json -Destination out\\animations\\animation.json -Force\"",
-    "predeploy": "npm run build && copy public\\.nojekyll out\\",
-    "deploy": "gh-pages -d out",
-    "firebase-deploy": "npm run build && firebase deploy"
+    "firebase-deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
