@@ -68,7 +68,6 @@ interface BookingData {
   people: number;
   withChildren: boolean;
   childrenCount: number;
-  notificationMethod: string;
   name: string;
   phone: string;
   email?: string;
@@ -155,7 +154,6 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
         people: bookingData.people,
         withChildren: bookingData.withChildren || false,
         childrenCount: bookingData.childrenCount || 0,
-        notificationMethod: bookingData.notificationMethod,
         name: bookingData.name,
         phone: bookingData.phone,
         email: bookingData.email || '',
@@ -379,7 +377,7 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
                   בקשת התור נשלחה לאישור הספר
                 </Typography>
                 <Typography variant="body1" component="div">
-                  לאחר אישור הבקשה, תקבל הודעת אישור ב{notificationMethodsMap[bookingData.notificationMethod] || 'הודעה'}
+                  לאחר אישור הבקשה, תקבל הודעת אישור באימייל
                 </Typography>
               </Box>
             </Alert>
@@ -612,20 +610,6 @@ export default function Confirmation({ bookingData }: ConfirmationProps) {
                   </Box>
                 </Grid>
               )}
-              
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Notifications color="primary" sx={{ mr: 1 }} />
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      שיטת התראה:
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      {notificationMethodsMap[bookingData.notificationMethod] || 'לא צוין'}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
               
               {bookingData.withChildren && (
                 <Grid item xs={12} sm={6}>

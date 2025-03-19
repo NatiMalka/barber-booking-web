@@ -79,7 +79,6 @@ interface ServiceData {
   people: number;
   withChildren: boolean;
   childrenCount: number;
-  notificationMethod: string;
 }
 
 interface ServiceSelectionProps {
@@ -88,7 +87,6 @@ interface ServiceSelectionProps {
     people?: number;
     withChildren?: boolean;
     childrenCount?: number;
-    notificationMethod?: string;
   };
   onDataChange: (data: Partial<ServiceData>) => void;
 }
@@ -96,7 +94,6 @@ interface ServiceSelectionProps {
 export default function ServiceSelection({ bookingData, onDataChange }: ServiceSelectionProps) {
   const [selectedServices, setSelectedServices] = useState<string[]>(bookingData.services || []);
   const [people, setPeople] = useState<number>(bookingData.people || 1);
-  const [notificationMethod, setNotificationMethod] = useState<string>(bookingData.notificationMethod || 'sms');
   const [withChildren, setWithChildren] = useState<boolean>(bookingData.withChildren || false);
   const [childrenCount, setChildrenCount] = useState<number>(bookingData.childrenCount || 0);
 
@@ -129,11 +126,6 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
       setPeople(value);
       onDataChange({ people: value });
     }
-  };
-
-  const handleNotificationMethodChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNotificationMethod(event.target.value);
-    onDataChange({ notificationMethod: event.target.value });
   };
 
   const handleWithChildrenChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,23 +302,6 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
             />
           </Box>
         </Collapse>
-      </Box>
-
-      <Divider sx={{ my: 3 }} />
-
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          אופן קבלת עדכונים
-        </Typography>
-        <FormControl component="fieldset">
-          <RadioGroup
-            value={notificationMethod}
-            onChange={handleNotificationMethodChange}
-          >
-            <FormControlLabel value="sms" control={<Radio />} label="SMS" />
-            <FormControlLabel value="email" control={<Radio />} label="אימייל" />
-          </RadioGroup>
-        </FormControl>
       </Box>
     </Box>
   );

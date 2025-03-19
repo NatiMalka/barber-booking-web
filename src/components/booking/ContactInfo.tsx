@@ -24,7 +24,6 @@ interface ContactInfoProps {
     phone?: string;
     email?: string;
     notes?: string;
-    notificationMethod?: string;
   };
   onDataChange: (data: Partial<ContactInfoData>) => void;
 }
@@ -87,7 +86,7 @@ export default function ContactInfo({ bookingData, onDataChange }: ContactInfoPr
               rules={{ 
                 required: 'שדה חובה',
                 pattern: {
-                  value: /^0\d{8,9}$/,
+                  value: /^05\d{8}$/,
                   message: 'מספר טלפון לא תקין'
                 }
               }}
@@ -112,37 +111,35 @@ export default function ContactInfo({ bookingData, onDataChange }: ContactInfoPr
             />
           </Grid>
           
-          {bookingData.notificationMethod === 'email' && (
-            <Grid item xs={12}>
-              <Controller
-                name="email"
-                control={control}
-                rules={{ 
-                  required: 'שדה חובה',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'כתובת אימייל לא תקינה'
-                  }
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="אימייל"
-                    fullWidth
-                    error={!!errors.email}
-                    helperText={errors.email?.message?.toString()}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Email />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-          )}
+          <Grid item xs={12}>
+            <Controller
+              name="email"
+              control={control}
+              rules={{ 
+                required: 'שדה חובה',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'כתובת אימייל לא תקינה'
+                }
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="אימייל"
+                  fullWidth
+                  error={!!errors.email}
+                  helperText={errors.email?.message?.toString()}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </Grid>
           
           <Grid item xs={12}>
             <Controller

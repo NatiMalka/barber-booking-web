@@ -27,7 +27,6 @@ interface BookingData {
   people: number;
   withChildren: boolean;
   childrenCount: number;
-  notificationMethod: string;
   name: string;
   phone: string;
   email: string;
@@ -43,7 +42,6 @@ export default function BookingPage() {
     people: 1,
     withChildren: false,
     childrenCount: 0,
-    notificationMethod: 'sms',
     name: '',
     phone: '',
     email: '',
