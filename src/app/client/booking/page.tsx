@@ -43,7 +43,7 @@ export default function BookingPage() {
     people: 1,
     withChildren: false,
     childrenCount: 0,
-    notificationMethod: 'whatsapp',
+    notificationMethod: 'sms',
     name: '',
     phone: '',
     email: '',

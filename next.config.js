@@ -1,19 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
   images: {
     unoptimized: true,
   },
   distDir: 'out',
-  trailingSlash: true,
-  // Add rewrites for direct navigation
-  async rewrites() {
-    return [
-      {
-        source: '/client/booking',
-        destination: '/client/booking/index.html',
-      },
-    ];
-  }
+  trailingSlash: true
 }
 
 module.exports = nextConfig 

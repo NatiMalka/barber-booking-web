@@ -9,7 +9,8 @@ import {
   where, 
   orderBy, 
   Timestamp,
-  getDoc
+  getDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config';
 
@@ -35,28 +36,25 @@ export interface Appointment {
 }
 
 // Create a new appointment
-export const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'status' | 'createdAt' | 'updatedAt'>) => {
+export async function createAppointment(data: any) {
   try {
-    console.log('createAppointment: מתחיל ליצור תור חדש עם הנתונים:', appointmentData);
-    
-    const appointmentWithMetadata = {
-      ...appointmentData,
+    // Create a new appointment document
+    const appointmentRef = await addDoc(collection(db, 'appointments'), {
+      ...data,
       status: 'pending',
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      createdAt: serverTimestamp(),
+      notificationMethod: data.notificationMethod || 'sms',
+    });
+
+    return {
+      success: true,
+      appointmentId: appointmentRef.id
     };
-    
-    console.log('createAppointment: נתוני התור לאחר הוספת מטא-דאטה:', appointmentWithMetadata);
-    
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), appointmentWithMetadata);
-    console.log(`createAppointment: תור נוצר בהצלחה עם ID: ${docRef.id}`);
-    
-    return { id: docRef.id, ...appointmentWithMetadata };
   } catch (error) {
     console.error('Error creating appointment:', error);
     throw error;
   }
-};
+}
 
 // Get all appointments
 export const getAllAppointments = async () => {
@@ -356,7 +354,7 @@ export const getAllAppointmentsFromAllCollections = async () => {
             time: data.time || '',
             service: data.service || '',
             people: data.people || 1,
-            notificationMethod: data.notificationMethod || 'whatsapp',
+            notificationMethod: data.notificationMethod || 'sms',
             name: data.name || '',
             phone: data.phone || '',
             email: data.email || '',

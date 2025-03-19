@@ -96,7 +96,7 @@ interface ServiceSelectionProps {
 export default function ServiceSelection({ bookingData, onDataChange }: ServiceSelectionProps) {
   const [selectedServices, setSelectedServices] = useState<string[]>(bookingData.services || []);
   const [people, setPeople] = useState<number>(bookingData.people || 1);
-  const [notificationMethod, setNotificationMethod] = useState<string>(bookingData.notificationMethod || 'whatsapp');
+  const [notificationMethod, setNotificationMethod] = useState<string>(bookingData.notificationMethod || 'sms');
   const [withChildren, setWithChildren] = useState<boolean>(bookingData.withChildren || false);
   const [childrenCount, setChildrenCount] = useState<number>(bookingData.childrenCount || 0);
 
@@ -323,7 +323,6 @@ export default function ServiceSelection({ bookingData, onDataChange }: ServiceS
             value={notificationMethod}
             onChange={handleNotificationMethodChange}
           >
-            <FormControlLabel value="whatsapp" control={<Radio />} label="וואטסאפ" />
             <FormControlLabel value="sms" control={<Radio />} label="SMS" />
             <FormControlLabel value="email" control={<Radio />} label="אימייל" />
           </RadioGroup>
