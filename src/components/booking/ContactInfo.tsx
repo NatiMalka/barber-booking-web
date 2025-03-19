@@ -95,6 +95,8 @@ export default function ContactInfo({ bookingData, onDataChange }: ContactInfoPr
                   {...field}
                   label="טלפון"
                   fullWidth
+                  type="tel"
+                  inputMode="numeric"
                   error={!!errors.phone}
                   helperText={errors.phone?.message?.toString()}
                   InputProps={{

@@ -105,6 +105,8 @@ export default function Contact() {
                     fullWidth
                     label="טלפון"
                     name="phone"
+                    type="tel"
+                    inputMode="numeric"
                     value={formData.phone}
                     onChange={handleChange}
                   />
