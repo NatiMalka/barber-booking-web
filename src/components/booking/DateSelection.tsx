@@ -13,7 +13,7 @@ import {
 import { format, addDays, isBefore, isEqual, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { getAppointmentsByDate } from '@/firebase/services/appointmentService';
-import { isVacationDay } from '@/firebase/services/availabilityService';
+import { getFutureVacationDays } from '@/firebase/services/availabilityService';
 import { EventBusy, BeachAccess } from '@mui/icons-material';
 
 // Define available time slots
@@ -58,8 +58,9 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
   const [vacationDays, setVacationDays] = useState<Record<string, { isFullDay: boolean, unavailableHours: string[] }>>({});
 
   const handleDateSelect = useCallback((date: Date) => {
-    // Check if the date is a full vacation day
-    const vacationInfo = vacationDays[format(date, 'yyyy-MM-dd')];
+    // Check if the date is a full vacation day using the cached data
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const vacationInfo = vacationDays[dateStr];
     
     if (vacationInfo && vacationInfo.isFullDay) {
       // Don't select full vacation days
@@ -93,34 +94,29 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     }
   }, [selectedDate, handleDateSelect]);
 
-  // Check for vacation days when dates are loaded
+  // Load vacation days when component mounts
   useEffect(() => {
-    const checkVacationDays = async () => {
-      const vacationInfo: Record<string, { isFullDay: boolean, unavailableHours: string[] }> = {};
-      
-      for (const date of availableDates) {
-        try {
-          const dateStr = format(date, 'yyyy-MM-dd');
-          const result = await isVacationDay(date);
-          
-          if (result.isVacationDay) {
-            vacationInfo[dateStr] = {
-              isFullDay: result.isFullDay,
-              unavailableHours: result.unavailableHours || []
-            };
-          }
-        } catch (error) {
-          console.error(`Error checking vacation day for ${date.toDateString()}:`, error);
-        }
+    const loadVacationDays = async () => {
+      try {
+        const vacations = await getFutureVacationDays();
+        const vacationMap: Record<string, { isFullDay: boolean, unavailableHours: string[] }> = {};
+        
+        vacations.forEach(vacation => {
+          const dateStr = format(vacation.date, 'yyyy-MM-dd');
+          vacationMap[dateStr] = {
+            isFullDay: vacation.isFullDay,
+            unavailableHours: vacation.unavailableHours || []
+          };
+        });
+        
+        setVacationDays(vacationMap);
+      } catch (error) {
+        console.error('Error loading vacation days:', error);
       }
-      
-      setVacationDays(vacationInfo);
     };
     
-    if (availableDates.length > 0) {
-      checkVacationDays();
-    }
-  }, [availableDates]);
+    loadVacationDays();
+  }, []);
 
   // Update available time slots based on selected date
   useEffect(() => {
@@ -175,7 +171,7 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     return selectedDate && isEqual(date, selectedDate);
   };
 
-  // Check if a date is a vacation day
+  // Check if a date is a vacation day using the cached data
   const isDateVacation = (date: Date): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return dateStr in vacationDays && vacationDays[dateStr].isFullDay;
@@ -202,7 +198,7 @@ export default function DateSelection({ bookingData, onDataChange }: DateSelecti
     return bookedTimeSlots.includes(timeSlot);
   };
 
-  // Check if a time slot is unavailable due to vacation
+  // Check if a time slot is unavailable due to vacation using the cached data
   const isTimeSlotVacation = (timeSlot: string): boolean => {
     if (!selectedDate) return false;
     
